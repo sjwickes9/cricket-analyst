@@ -1,0 +1,111 @@
+/* modal.css
+   Bottom sheet, toast messages and the first launch walkthrough. */
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 100;
+}
+
+.bottom-sheet {
+  width: 100%;
+  background: var(--scoreboard-bg);
+  color: var(--chalk);
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  animation: slide-up 0.18s ease-out;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.run-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.run-button {
+  min-height: 64px;
+  border-radius: 12px;
+  background: var(--field-green);
+  color: var(--chalk);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.run-button:active {
+  background: var(--field-green-dark);
+}
+
+.sheet-cancel {
+  width: 100%;
+  min-height: var(--touch-target-min);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--chalk);
+  opacity: 0.7;
+  font-size: 1rem;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 8px);
+  background: var(--scoreboard-bg);
+  color: var(--chalk);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 200;
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.walkthrough-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 24px;
+}
+
+.walkthrough-card {
+  background: var(--scoreboard-bg);
+  color: var(--chalk);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.walkthrough-card ol {
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.walkthrough-dismiss {
+  width: 100%;
+  min-height: var(--touch-target-min);
+  border-radius: 8px;
+  background: var(--field-green);
+  color: var(--chalk);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 8px;
+}

@@ -1,0 +1,37 @@
+/* field.css
+   Visual styling for the SVG field drawn by field.js. */
+
+.field-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 640px;
+  max-height: 640px;
+  touch-action: manipulation;
+}
+
+.field-boundary {
+  fill: var(--field-green);
+  stroke: var(--chalk);
+  stroke-width: 3;
+}
+
+.field-inner-circle {
+  fill: none;
+  stroke: rgba(244, 244, 240, 0.35);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.field-pitch {
+  fill: var(--pitch-tan);
+  rx: 3;
+}
+
+.field-crease-marker {
+  fill: var(--chalk);
+}
+
+.shot-marker {
+  stroke: var(--ink);
+  stroke-width: 1;
+}

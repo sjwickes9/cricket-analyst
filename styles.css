@@ -1,0 +1,53 @@
+/* styles.css
+   Base resets and design tokens. Colours are named as CSS variables so
+   field.css and wagonwheel.js can reference them without duplication. */
+
+:root {
+  --field-green: #2f6b3c;
+  --field-green-dark: #285a33;
+  --pitch-tan: #d9c48a;
+  --chalk: #f4f4f0;
+  --ink: #14261a;
+  --scoreboard-bg: #14261a;
+  --scoreboard-text: #f4f4f0;
+  --accent-warning: #c94f3c;
+  --run-dot: #f4f4f0;
+  --run-single: #e8d268;
+  --run-four: #4fa3d1;
+  --run-six: #c94f3c;
+
+  --touch-target-min: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--ink);
+  color: var(--chalk);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--run-four);
+  outline-offset: 2px;
+}
+
+h2 {
+  margin: 0 0 12px 0;
+}

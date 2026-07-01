@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cricket Analyst</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/field.css" />
+  <link rel="stylesheet" href="css/modal.css" />
+</head>
+<body>
+  <header class="status-bar">
+    <div class="status-batter">
+      <span id="striker-name" class="status-batter-name"></span>
+      <span id="non-striker-name" class="status-batter-name status-batter-name--secondary"></span>
+    </div>
+    <div id="over-ball" class="status-over"></div>
+    <div class="status-actions">
+      <button type="button" id="edit-button" class="status-action-button">Edit last</button>
+      <button type="button" id="undo-button" class="status-action-button status-action-button--warning">Undo</button>
+    </div>
+  </header>
+
+  <main id="field-container" class="field-container" aria-label="Cricket field"></main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

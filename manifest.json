@@ -1,9 +1,0 @@
-{
-  "name": "Cricket Analyst",
-  "short_name": "CricketAnalyst",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#0b1320",
-  "theme_color": "#4df0b0",
-  "icons": []
-}

@@ -65,7 +65,8 @@ export function renderNewMatchSetup(container, onComplete) {
     <div id="players-list" class="roster-list"></div>
     <button type="button" id="add-player-button" class="setup-secondary-button">Add batter</button>
 
-    <h2 class="setup-subheading">Bowlers</h2>
+    <h2 class="setup-subheading">Bowlers (optional)</h2>
+    <p class="setup-hint">Skip this if bowler names are not known. You can still record every shot.</p>
     <div id="bowlers-list" class="roster-list"></div>
     <button type="button" id="add-bowler-button" class="setup-secondary-button">Add bowler</button>
 
@@ -99,11 +100,10 @@ export function renderNewMatchSetup(container, onComplete) {
     bowlerRows.push({ row, nameInput });
   }
 
-  // Start with two batters and one bowler row, since every match needs
-  // at least that many.
+  // Start with two batter rows, since every match needs at least two.
+  // No bowler row to start, bowlers are optional.
   addPlayerRow();
   addPlayerRow();
-  addBowlerRow();
 
   wrap.querySelector('#add-player-button').addEventListener('click', addPlayerRow);
   wrap.querySelector('#add-bowler-button').addEventListener('click', addBowlerRow);
@@ -125,10 +125,6 @@ export function renderNewMatchSetup(container, onComplete) {
       errorEl.textContent = 'Add at least two batters.';
       return;
     }
-    if (bowlers.length < 1) {
-      errorEl.textContent = 'Add at least one bowler.';
-      return;
-    }
 
     const match = await createMatch({ teamName, opposition, players, bowlers });
     renderOpenersSetup(container, match, onComplete);
@@ -142,7 +138,9 @@ export function renderOpenersSetup(container, match, onComplete, bannerText) {
   wrap.className = 'setup-screen';
 
   const playerOptions = match.players.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
-  const bowlerOptions = match.bowlers.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
+  const bowlerOptions =
+    '<option value="">Unknown / not tracked</option>' +
+    match.bowlers.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
 
   wrap.innerHTML = `
     ${bannerText ? `<p class="setup-banner">${bannerText}</p>` : ''}
@@ -153,7 +151,7 @@ export function renderOpenersSetup(container, match, onComplete, bannerText) {
     <label class="setup-label">Non-striker
       <select id="non-striker-select" class="setup-text-input">${playerOptions}</select>
     </label>
-    <label class="setup-label">Opening bowler
+    <label class="setup-label">Opening bowler (optional)
       <select id="bowler-select" class="setup-text-input">${bowlerOptions}</select>
     </label>
     <button type="button" id="start-match-button" class="setup-primary-button">Start scoring</button>
@@ -168,7 +166,7 @@ export function renderOpenersSetup(container, match, onComplete, bannerText) {
   wrap.querySelector('#start-match-button').addEventListener('click', async () => {
     const strikerId = wrap.querySelector('#striker-select').value;
     const nonStrikerId = nonStrikerSelect.value;
-    const bowlerId = wrap.querySelector('#bowler-select').value;
+    const bowlerId = wrap.querySelector('#bowler-select').value || null;
     const errorEl = wrap.querySelector('#openers-error');
 
     if (strikerId === nonStrikerId) {

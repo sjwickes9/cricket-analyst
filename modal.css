@@ -33,6 +33,12 @@
   font-weight: 600;
 }
 
+.setup-hint {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  margin: -6px 0 10px 0;
+}
+
 .setup-label {
   display: block;
   font-size: 0.85rem;

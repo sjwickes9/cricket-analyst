@@ -46,7 +46,7 @@ function updateStatusBar(state) {
   document.getElementById('wickets-down').textContent = `${state.wicketsDown} wkts`;
   document.getElementById('striker-name').textContent = `${striker ? striker.name : '?'} *`;
   document.getElementById('non-striker-name').textContent = nonStriker ? nonStriker.name : '?';
-  document.getElementById('bowler-name').textContent = bowler ? bowler.name : '?';
+  document.getElementById('bowler-name').textContent = bowler ? bowler.name : 'Unknown';
 }
 
 function handleFieldTap({ angle, distance }) {
@@ -152,14 +152,15 @@ function handleDeclare() {
 }
 
 function handleChangeBowler() {
+  const names = ['Unknown / not tracked', ...match.bowlers.map((b) => b.name)];
   openBottomSheet({
     title: 'Change bowler',
-    runOptions: match.bowlers.map((b) => b.name),
+    runOptions: names,
     onSelect: async (name) => {
       const bowler = match.bowlers.find((b) => b.name === name);
-      innings = await setCurrentBowler(innings, bowler.id);
+      innings = await setCurrentBowler(innings, bowler ? bowler.id : null);
       await refresh();
-      showToast(`${bowler.name} is now bowling`);
+      showToast(bowler ? `${bowler.name} is now bowling` : 'Bowler set to unknown');
     },
   });
 }

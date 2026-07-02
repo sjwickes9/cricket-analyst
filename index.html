@@ -10,19 +10,37 @@
   <link rel="stylesheet" href="modal.css" />
 </head>
 <body>
-  <header class="status-bar">
-    <div class="status-batter">
-      <span id="striker-name" class="status-batter-name"></span>
-      <span id="non-striker-name" class="status-batter-name status-batter-name--secondary"></span>
-    </div>
-    <div id="over-ball" class="status-over"></div>
-    <div class="status-actions">
-      <button type="button" id="edit-button" class="status-action-button">Edit last</button>
-      <button type="button" id="undo-button" class="status-action-button status-action-button--warning">Undo</button>
-    </div>
-  </header>
+  <div id="setup-container" class="setup-container"></div>
 
-  <main id="field-container" class="field-container" aria-label="Cricket field"></main>
+  <div id="scoring-screen" class="scoring-screen" style="display: none;">
+    <header class="status-bar">
+      <div class="status-batter">
+        <span id="striker-name" class="status-batter-name"></span>
+        <span id="non-striker-name" class="status-batter-name status-batter-name--secondary"></span>
+      </div>
+      <div class="status-centre">
+        <div id="over-ball" class="status-over"></div>
+        <div id="wickets-down" class="status-wickets"></div>
+      </div>
+      <div class="status-actions">
+        <button type="button" id="edit-button" class="status-action-button">Edit last</button>
+        <button type="button" id="undo-button" class="status-action-button status-action-button--warning">Undo</button>
+      </div>
+    </header>
+
+    <div class="bowler-bar">
+      <span>Bowling: <strong id="bowler-name"></strong></span>
+      <button type="button" id="change-bowler-button" class="bowler-change-button">Change</button>
+    </div>
+
+    <main id="field-container" class="field-container" aria-label="Cricket field"></main>
+
+    <div class="action-bar">
+      <button type="button" id="wicket-button" class="action-bar-button action-bar-button--wicket">Wicket</button>
+      <button type="button" id="extra-button" class="action-bar-button">Extra</button>
+      <button type="button" id="declare-button" class="action-bar-button">Declare</button>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>

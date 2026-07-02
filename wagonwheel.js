@@ -6,7 +6,7 @@
 import { CENTRE, BOUNDARY_RADIUS } from './field.js';
 import { polarToPoint, displayAngleForHandedness } from './utils.js';
 import { currentEvents } from './innings.js';
-import { getBatterById } from './players.js';
+import { getPlayerById } from './match.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -19,11 +19,14 @@ const RUN_COLOUR = {
   6: 'var(--run-six)',
 };
 
-export function renderWagonWheel(shotsGroup, events) {
+export function renderWagonWheel(shotsGroup, match, events) {
   shotsGroup.innerHTML = '';
 
   for (const event of currentEvents(events)) {
-    const batter = getBatterById(event.strikerBatterId);
+    if (event.extraType) continue;
+    if (event.wicket) continue;
+
+    const batter = getPlayerById(match, event.strikerBatterId);
     const handedness = batter ? batter.handedness : 'right';
     const displayAngle = displayAngleForHandedness(event.angle, handedness);
     const { x, y } = polarToPoint(displayAngle, event.distance, CENTRE, CENTRE, BOUNDARY_RADIUS);

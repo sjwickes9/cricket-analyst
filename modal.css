@@ -1,6 +1,132 @@
 /* modal.css
    Bottom sheet, toast messages and the first launch walkthrough. */
 
+.setup-container {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--ink);
+}
+
+.setup-screen {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.setup-title {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+}
+
+.setup-subheading {
+  font-size: 1rem;
+  margin: 20px 0 8px 0;
+  opacity: 0.85;
+}
+
+.setup-banner {
+  background: var(--field-green);
+  color: var(--chalk);
+  text-align: center;
+  padding: 10px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.setup-label {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-bottom: 14px;
+}
+
+.setup-text-input {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-target-min);
+  margin-top: 6px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(244, 244, 240, 0.25);
+  background: rgba(244, 244, 240, 0.06);
+  color: var(--chalk);
+  font-size: 1rem;
+}
+
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.roster-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.roster-name-input {
+  flex: 1;
+  min-height: var(--touch-target-min);
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(244, 244, 240, 0.25);
+  background: rgba(244, 244, 240, 0.06);
+  color: var(--chalk);
+  font-size: 1rem;
+}
+
+.roster-handedness-select {
+  min-height: var(--touch-target-min);
+  border-radius: 8px;
+  border: 1px solid rgba(244, 244, 240, 0.25);
+  background: rgba(244, 244, 240, 0.06);
+  color: var(--chalk);
+  font-size: 0.9rem;
+}
+
+.roster-remove-button {
+  min-height: var(--touch-target-min);
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--accent-warning);
+  color: var(--chalk);
+  font-size: 0.8rem;
+}
+
+.setup-secondary-button {
+  min-height: var(--touch-target-min);
+  padding: 0 16px;
+  border-radius: 8px;
+  background: rgba(244, 244, 240, 0.12);
+  color: var(--chalk);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.setup-primary-button {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-target-min);
+  border-radius: 10px;
+  background: var(--field-green);
+  color: var(--chalk);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 16px;
+}
+
+.setup-error {
+  color: var(--accent-warning);
+  font-size: 0.85rem;
+  min-height: 1.2em;
+}
+
+.run-button--selected {
+  outline: 3px solid var(--run-four);
+}
+
 .sheet-overlay {
   position: fixed;
   inset: 0;
@@ -12,6 +138,8 @@
 
 .bottom-sheet {
   width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
   background: var(--scoreboard-bg);
   color: var(--chalk);
   border-radius: 16px 16px 0 0;

@@ -1,10 +1,20 @@
 // storage.js
 // The only module that talks to IndexedDB. Everything else deals in
-// plain event objects and calls the functions below.
+// plain event, match and innings objects and calls the functions below.
+//
+// Three stores:
+//   events  - the ball-by-ball log (unchanged from Milestone 1)
+//   matches - one record per match: team name, roster of batters and
+//             bowlers. Created once at setup and not changed mid-match.
+//   innings - one record per innings: batting order for that innings,
+//             openers, current bowler, and status (in-progress,
+//             declared, all-out, complete).
 
 const DB_NAME = 'cricket-analyst';
-const DB_VERSION = 1;
-const STORE_NAME = 'events';
+const DB_VERSION = 2;
+const EVENTS_STORE = 'events';
+const MATCHES_STORE = 'matches';
+const INNINGS_STORE = 'innings';
 
 let dbPromise = null;
 
@@ -16,8 +26,18 @@ export function openDatabase() {
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+
+      if (!db.objectStoreNames.contains(EVENTS_STORE)) {
+        const store = db.createObjectStore(EVENTS_STORE, { keyPath: 'id' });
+        store.createIndex('matchId', 'matchId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains(MATCHES_STORE)) {
+        db.createObjectStore(MATCHES_STORE, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(INNINGS_STORE)) {
+        const store = db.createObjectStore(INNINGS_STORE, { keyPath: 'id' });
         store.createIndex('matchId', 'matchId', { unique: false });
       }
     };
@@ -29,41 +49,35 @@ export function openDatabase() {
   return dbPromise;
 }
 
-export async function addEvent(event) {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).add(event);
-    tx.oncomplete = () => resolve(event);
-    tx.onerror = () => reject(tx.error);
-  });
+function runTransaction(storeName, mode, work) {
+  return openDatabase().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, mode);
+        const store = tx.objectStore(storeName);
+        const result = work(store);
+        tx.oncomplete = () => resolve(result && result.__result);
+        tx.onerror = () => reject(tx.error);
+      })
+  );
 }
 
-export async function updateEvent(event) {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put(event);
-    tx.oncomplete = () => resolve(event);
-    tx.onerror = () => reject(tx.error);
-  });
+// --- events -----------------------------------------------------------
+
+export async function addEvent(event) {
+  await runTransaction(EVENTS_STORE, 'readwrite', (store) => store.add(event));
+  return event;
 }
 
 export async function deleteEvent(eventId) {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).delete(eventId);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
+  await runTransaction(EVENTS_STORE, 'readwrite', (store) => store.delete(eventId));
 }
 
 export async function getEventsForMatch(matchId) {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const index = tx.objectStore(STORE_NAME).index('matchId');
+    const tx = db.transaction(EVENTS_STORE, 'readonly');
+    const index = tx.objectStore(EVENTS_STORE).index('matchId');
     const request = index.getAll(matchId);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -75,11 +89,52 @@ export async function getEventsForMatch(matchId) {
 export async function supersedeEvent(originalEvent, replacementEvent) {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(EVENTS_STORE, 'readwrite');
+    const store = tx.objectStore(EVENTS_STORE);
     store.put({ ...originalEvent, supersededBy: replacementEvent.id });
     store.add(replacementEvent);
     tx.oncomplete = () => resolve(replacementEvent);
     tx.onerror = () => reject(tx.error);
   });
+}
+
+// --- matches ------------------------------------------------------------
+
+export async function saveMatch(match) {
+  await runTransaction(MATCHES_STORE, 'readwrite', (store) => store.put(match));
+  return match;
+}
+
+export async function getMatch(matchId) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MATCHES_STORE, 'readonly');
+    const request = tx.objectStore(MATCHES_STORE).get(matchId);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// --- innings ------------------------------------------------------------
+
+export async function saveInnings(innings) {
+  await runTransaction(INNINGS_STORE, 'readwrite', (store) => store.put(innings));
+  return innings;
+}
+
+export async function getAllInningsForMatch(matchId) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(INNINGS_STORE, 'readonly');
+    const index = tx.objectStore(INNINGS_STORE).index('matchId');
+    const request = index.getAll(matchId);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function getLatestInnings(matchId) {
+  const all = await getAllInningsForMatch(matchId);
+  if (all.length === 0) return null;
+  return all.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
 }

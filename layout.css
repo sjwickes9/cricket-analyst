@@ -38,13 +38,6 @@
   opacity: 0.75;
 }
 
-.status-over {
-  font-variant-numeric: tabular-nums;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
 .status-centre {
   display: flex;
   flex-direction: column;
@@ -52,8 +45,15 @@
   line-height: 1.2;
 }
 
-.status-wickets {
-  font-size: 0.75rem;
+.status-score {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.status-over {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
   opacity: 0.75;
 }
 
@@ -117,9 +117,26 @@
   background: var(--accent-warning);
 }
 
+.roster-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(244, 244, 240, 0.03);
+}
+
+.roster-bar-button {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 8px;
+  background: rgba(244, 244, 240, 0.1);
+  color: var(--chalk);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .field-container {
   width: 100%;
-  height: calc(100% - 68px - 40px - 60px);
+  height: calc(100% - 68px - 40px - 56px - 60px);
   display: flex;
   align-items: center;
   justify-content: center;

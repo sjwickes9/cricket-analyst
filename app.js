@@ -3,20 +3,33 @@
 // innings, then the live scoring screen. Holds the current match and
 // innings in memory but always re-derives live state from storage.
 
-import { renderField, onFieldTap } from './field.js';
+import { renderField, onFieldTap, getOrientation, setOrientation } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
-import { openBottomSheet, openExtraSheet, openWicketSheet, openConfirmSheet, showToast, maybeShowWalkthrough } from './ui.js';
+import { openBottomSheet, openExtraSheet, openWicketSheet, openConfirmSheet, openAddPersonSheet, showToast, maybeShowWalkthrough } from './ui.js';
 import { getEventsForMatch } from './storage.js';
 import { computeLiveState } from './innings.js';
-import { getActiveMatchId, getMatch, getActiveInnings, getPlayerById, getBowlerById, setInningsStatus, setCurrentBowler } from './match.js';
+import {
+  getActiveMatchId,
+  getMatch,
+  getActiveInnings,
+  getPlayerById,
+  getBowlerById,
+  setInningsStatus,
+  setCurrentBowler,
+  addPlayerMidMatch,
+  addBowlerMidMatch,
+  appendToBattingOrder,
+} from './match.js';
 import { renderNewMatchSetup, renderNextInningsSetup } from './setup.js';
 import { recordShot, recordWicket, undoLastEvent, editEvent, getLastEvent } from './scoring.js';
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
+const ORIENTATION_STEPS = [0, 90, 180, 270];
 
 let match = null;
 let innings = null;
 let shotsGroup = null;
+let fieldGroup = null;
 
 async function currentInningsEvents() {
   const allEvents = await getEventsForMatch(match.id);
@@ -42,8 +55,8 @@ function updateStatusBar(state) {
   const nonStriker = getPlayerById(match, state.nonStrikerId);
   const bowler = getBowlerById(match, innings.currentBowlerId);
 
+  document.getElementById('live-score').textContent = `${state.totalRuns}-${state.wicketsDown}`;
   document.getElementById('over-ball').textContent = `Over ${state.over}.${state.ball}`;
-  document.getElementById('wickets-down').textContent = `${state.wicketsDown} wkts`;
   document.getElementById('striker-name').textContent = `${striker ? striker.name : '?'} *`;
   document.getElementById('non-striker-name').textContent = nonStriker ? nonStriker.name : '?';
   document.getElementById('bowler-name').textContent = bowler ? bowler.name : 'Unknown';
@@ -165,15 +178,59 @@ function handleChangeBowler() {
   });
 }
 
+function handleAddBatter() {
+  openAddPersonSheet({
+    title: 'Add batter',
+    showHandedness: true,
+    onComplete: async ({ name, handedness }) => {
+      const { match: updatedMatch, player } = await addPlayerMidMatch(match, { name, handedness });
+      match = updatedMatch;
+      innings = await appendToBattingOrder(innings, player.id);
+      await refresh();
+      showToast(`${name} added to the batting order`);
+    },
+  });
+}
+
+function handleAddBowler() {
+  openAddPersonSheet({
+    title: 'Add bowler',
+    showHandedness: false,
+    onComplete: async ({ name }) => {
+      const { match: updatedMatch } = await addBowlerMidMatch(match, { name });
+      match = updatedMatch;
+      await refresh();
+      showToast(`${name} added to the bowlers`);
+    },
+  });
+}
+
+function orientationStorageKey() {
+  return `cricket-analyst-orientation-${match.id}`;
+}
+
+function handleRotate() {
+  const current = getOrientation(fieldGroup);
+  const currentIndex = ORIENTATION_STEPS.indexOf(current);
+  const next = ORIENTATION_STEPS[(currentIndex + 1) % ORIENTATION_STEPS.length];
+  setOrientation(fieldGroup, next);
+  localStorage.setItem(orientationStorageKey(), String(next));
+}
+
 function showScoringScreen() {
   document.getElementById('setup-container').style.display = 'none';
   const screen = document.getElementById('scoring-screen');
   screen.style.display = 'flex';
 
   const fieldContainer = document.getElementById('field-container');
-  const { svg, shotsGroup: group } = renderField(fieldContainer);
+  const { svg, shotsGroup: group, fieldGroup: fg } = renderField(fieldContainer);
   shotsGroup = group;
-  onFieldTap(svg, handleFieldTap);
+  fieldGroup = fg;
+
+  const savedOrientation = Number(localStorage.getItem(orientationStorageKey())) || 0;
+  setOrientation(fieldGroup, savedOrientation);
+
+  onFieldTap(svg, fieldGroup, handleFieldTap);
 
   refresh();
 }
@@ -200,6 +257,9 @@ async function init() {
   document.getElementById('extra-button').addEventListener('click', handleExtra);
   document.getElementById('declare-button').addEventListener('click', handleDeclare);
   document.getElementById('change-bowler-button').addEventListener('click', handleChangeBowler);
+  document.getElementById('add-batter-button').addEventListener('click', handleAddBatter);
+  document.getElementById('add-bowler-button').addEventListener('click', handleAddBowler);
+  document.getElementById('rotate-button').addEventListener('click', handleRotate);
 
   const activeMatchId = getActiveMatchId();
   if (activeMatchId) {

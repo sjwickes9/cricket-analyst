@@ -40,10 +40,13 @@ export function computeLiveState(innings, events) {
   let over = 0;
   let ball = 0;
   let wicketsDown = 0;
+  let totalRuns = 0;
 
   const battersAppeared = new Set(innings.openers);
 
   for (const event of currentEvents(events)) {
+    totalRuns += event.runs + event.extraRuns;
+
     if (event.legalDelivery) {
       ball += 1;
       if (ball === 6) {
@@ -80,6 +83,7 @@ export function computeLiveState(innings, events) {
     strikerId,
     nonStrikerId,
     wicketsDown,
+    totalRuns,
     battersAppeared,
     allOut,
     nextBatterId,

@@ -84,4 +84,28 @@ export function getBowlerById(match, bowlerId) {
   return match.bowlers.find((b) => b.id === bowlerId);
 }
 
+// Mid-innings additions: amateur teams often do not know their full XI
+// or bowling attack in advance. A new batter is appended to the end of
+// the current innings' batting order (they bat last if not already
+// used); a new bowler simply becomes available to select next.
+export async function addPlayerMidMatch(match, { name, handedness }) {
+  const player = { id: generateId(), name, handedness };
+  const updatedMatch = { ...match, players: [...match.players, player] };
+  await saveMatch(updatedMatch);
+  return { match: updatedMatch, player };
+}
+
+export async function addBowlerMidMatch(match, { name }) {
+  const bowler = { id: generateId(), name };
+  const updatedMatch = { ...match, bowlers: [...match.bowlers, bowler] };
+  await saveMatch(updatedMatch);
+  return { match: updatedMatch, bowler };
+}
+
+export async function appendToBattingOrder(innings, playerId) {
+  const updated = { ...innings, battingOrder: [...innings.battingOrder, playerId] };
+  await saveInnings(updated);
+  return updated;
+}
+
 export { getMatch };

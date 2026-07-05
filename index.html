@@ -19,8 +19,8 @@
         <span id="non-striker-name" class="status-batter-name status-batter-name--secondary"></span>
       </div>
       <div class="status-centre">
+        <div id="live-score" class="status-score"></div>
         <div id="over-ball" class="status-over"></div>
-        <div id="wickets-down" class="status-wickets"></div>
       </div>
       <div class="status-actions">
         <button type="button" id="edit-button" class="status-action-button">Edit last</button>
@@ -31,6 +31,12 @@
     <div class="bowler-bar">
       <span>Bowling: <strong id="bowler-name"></strong></span>
       <button type="button" id="change-bowler-button" class="bowler-change-button">Change</button>
+    </div>
+
+    <div class="roster-bar">
+      <button type="button" id="add-batter-button" class="roster-bar-button">Add batter</button>
+      <button type="button" id="add-bowler-button" class="roster-bar-button">Add bowler</button>
+      <button type="button" id="rotate-button" class="roster-bar-button" aria-label="Rotate field orientation">Rotate view</button>
     </div>
 
     <main id="field-container" class="field-container" aria-label="Cricket field"></main>

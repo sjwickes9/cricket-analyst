@@ -206,6 +206,53 @@ export function openWicketSheet({ striker, nonStriker, remainingBatters, onCompl
   });
 }
 
+export function openAddPersonSheet({ title, showHandedness, onComplete, onCancel }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'sheet-overlay';
+  const sheet = document.createElement('div');
+  sheet.className = 'bottom-sheet';
+
+  sheet.innerHTML = `
+    <h2>${title}</h2>
+    <label class="setup-label">Name
+      <input type="text" id="add-person-name" class="setup-text-input" placeholder="Player name" />
+    </label>
+    ${
+      showHandedness
+        ? `<label class="setup-label">Handedness
+             <select id="add-person-handedness" class="setup-text-input">
+               <option value="right">Right handed</option>
+               <option value="left">Left handed</option>
+             </select>
+           </label>`
+        : ''
+    }
+    <button type="button" id="confirm-add-person" class="setup-primary-button">Add</button>
+    <button type="button" class="sheet-cancel">Cancel</button>
+    <p id="add-person-error" class="setup-error"></p>
+  `;
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+
+  sheet.querySelector('#add-person-name').focus();
+
+  sheet.querySelector('.sheet-cancel').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    if (onCancel) onCancel();
+  });
+
+  sheet.querySelector('#confirm-add-person').addEventListener('click', () => {
+    const name = sheet.querySelector('#add-person-name').value.trim();
+    if (!name) {
+      sheet.querySelector('#add-person-error').textContent = 'Enter a name.';
+      return;
+    }
+    const handedness = showHandedness ? sheet.querySelector('#add-person-handedness').value : undefined;
+    document.body.removeChild(overlay);
+    onComplete({ name, handedness });
+  });
+}
+
 export function openConfirmSheet({ title, message, confirmLabel, onConfirm, onCancel }) {
   const overlay = document.createElement('div');
   overlay.className = 'sheet-overlay';

@@ -28,7 +28,7 @@
   --run-four: #5b9bd0;
   --run-six: #b8493a;
 
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-body: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   --touch-target-min: 48px;
@@ -50,6 +50,31 @@ body {
   color: var(--chalk);
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-brand {
+  flex: 0 0 auto;
+  padding: 6px 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.28em;
+  color: var(--brass);
+  background: var(--ink-raised);
+  border-bottom: 1px solid rgba(201, 162, 77, 0.25);
+}
+
+.app-version {
+  flex: 0 0 auto;
+  padding: 3px 0;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  color: rgba(242, 239, 228, 0.35);
+  background: var(--ink);
 }
 
 button {
@@ -70,6 +95,7 @@ button:focus-visible {
 
 h1, h2 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   margin: 0 0 12px 0;
 }

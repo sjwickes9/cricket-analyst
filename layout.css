@@ -8,7 +8,8 @@
 
 .scoring-screen {
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .status-bar {
@@ -57,8 +58,9 @@
 .status-score {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
-  font-size: 1.6rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--brass);
   letter-spacing: 0.02em;
 }
@@ -173,4 +175,29 @@
   align-items: center;
   justify-content: center;
   padding: 6px;
+  position: relative;
+}
+
+.keeper-dot-button {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  transform: translate(-50%, -50%);
+  min-width: 76px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(15, 29, 22, 0.82);
+  border: 1.5px solid var(--brass);
+  color: var(--brass);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  backdrop-filter: blur(2px);
+  z-index: 5;
+}
+
+.keeper-dot-button:active {
+  background: var(--brass);
+  color: var(--ink);
 }

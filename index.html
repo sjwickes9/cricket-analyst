@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Cricket Analyst</title>
+  <title>HOWZT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="layout.css" />
   <link rel="stylesheet" href="field.css" />
   <link rel="stylesheet" href="modal.css" />
 </head>
 <body>
-  <div id="setup-container" class="setup-container"></div>
+  <div class="app-brand">HOWZT</div>
+
+  <div id="setup-container" class="setup-container">
+    <div id="setup-target"></div>
+  </div>
 
   <div id="scoring-screen" class="scoring-screen" style="display: none;">
     <header class="status-bar">
@@ -41,15 +45,18 @@
       <button type="button" id="rotate-button" class="roster-bar-button" aria-label="Rotate field orientation">Rotate view</button>
     </div>
 
-    <main id="field-container" class="field-container" aria-label="Cricket field"></main>
+    <main id="field-container" class="field-container" aria-label="Cricket field">
+      <button type="button" id="keeper-dot-button" class="keeper-dot-button">To keeper</button>
+    </main>
 
     <div class="action-bar">
-      <button type="button" id="dot-ball-button" class="action-bar-button">Dot ball</button>
       <button type="button" id="wicket-button" class="action-bar-button action-bar-button--wicket">Wicket</button>
       <button type="button" id="extra-button" class="action-bar-button">Extra</button>
       <button type="button" id="declare-button" class="action-bar-button">Declare</button>
     </div>
   </div>
+
+  <div id="app-version" class="app-version"></div>
 
   <script type="module" src="app.js"></script>
 </body>

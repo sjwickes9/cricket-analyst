@@ -27,6 +27,10 @@ import { recordShot, recordWicket, undoLastEvent, editEvent, getLastEvent } from
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
+// No build step generates this automatically: bump it by hand (GMT date
+// and time, YYMMDDHHMM) before each deploy while the app is in alpha.
+const APP_VERSION = 'v0.2607061530';
+
 let match = null;
 let innings = null;
 let shotsGroup = null;
@@ -68,14 +72,15 @@ function updateStatusBar(state) {
   }
 }
 
-// A ball that goes straight through to the keeper untouched has no
-// real shot position, so this skips the tap-and-select flow entirely.
-// angle 0 / distance 0 is the same "no real position" sentinel already
-// used for extras and wickets.
+// A ball played through to the keeper untouched, no shot, no run: the
+// most common delivery in a real innings, so it gets a one-tap shortcut
+// rather than requiring a tap-and-select for a "shot" that never
+// happened. angle 0 / distance 0 is the same "no real position"
+// sentinel already used for extras and wickets.
 async function handleDotBall() {
   await recordShot({ matchId: match.id, innings, angle: 0, distance: 0, runs: 0 });
   await refresh();
-  showToast('Dot ball recorded');
+  showToast('Played to keeper, dot ball recorded');
 }
 
 function handleFieldTap({ angle, distance }) {
@@ -252,21 +257,21 @@ function showScoringScreen() {
 async function showInningsSummary() {
   const screen = document.getElementById('scoring-screen');
   screen.style.display = 'none';
-  const setupContainer = document.getElementById('setup-container');
-  setupContainer.style.display = 'block';
+  document.getElementById('setup-container').style.display = 'block';
+  const setupTarget = document.getElementById('setup-target');
 
   const events = await currentInningsEvents();
   const batterStats = computeBatterStats(innings, events);
 
-  renderInningsSummary(setupContainer, match, innings, events, batterStats, {
+  renderInningsSummary(setupTarget, match, innings, events, batterStats, {
     onStartNextInnings: () => startNextInningsFlow(),
     onFinish: () => showMatchFinished(),
   });
 }
 
 function showMatchFinished() {
-  const setupContainer = document.getElementById('setup-container');
-  setupContainer.innerHTML = `
+  const setupTarget = document.getElementById('setup-target');
+  setupTarget.innerHTML = `
     <div class="setup-screen">
       <h1 class="setup-title">Match finished</h1>
       <p class="setup-hint">Thanks for scoring. Nothing more is recorded for this match on this device.</p>
@@ -274,10 +279,10 @@ function showMatchFinished() {
     </div>
   `;
   clearActiveMatchId();
-  setupContainer.querySelector('#new-match-button').addEventListener('click', () => {
+  setupTarget.querySelector('#new-match-button').addEventListener('click', () => {
     match = null;
     innings = null;
-    renderNewMatchSetup(setupContainer, (newMatch, newInnings) => {
+    renderNewMatchSetup(setupTarget, (newMatch, newInnings) => {
       match = newMatch;
       innings = newInnings;
       showScoringScreen();
@@ -289,8 +294,8 @@ function showMatchFinished() {
 function startNextInningsFlow() {
   const screen = document.getElementById('scoring-screen');
   screen.style.display = 'none';
-  const setupContainer = document.getElementById('setup-container');
-  setupContainer.style.display = 'block';
+  document.getElementById('setup-container').style.display = 'block';
+  const setupTarget = document.getElementById('setup-target');
 
   const onInningsReady = (updatedMatch, newInnings) => {
     match = updatedMatch;
@@ -298,24 +303,25 @@ function startNextInningsFlow() {
     showScoringScreen();
   };
 
-  renderNextInningsChoice(setupContainer, match, {
-    onSameTeam: () => renderNextInningsSetup(setupContainer, match, onInningsReady),
-    onOtherTeam: () => renderOtherTeamRosterSetup(setupContainer, match, onInningsReady),
+  renderNextInningsChoice(setupTarget, match, {
+    onSameTeam: () => renderNextInningsSetup(setupTarget, match, onInningsReady),
+    onOtherTeam: () => renderOtherTeamRosterSetup(setupTarget, match, onInningsReady),
   });
 }
 
 async function init() {
-  const setupContainer = document.getElementById('setup-container');
+  const setupTarget = document.getElementById('setup-target');
 
   document.getElementById('undo-button').addEventListener('click', handleUndo);
   document.getElementById('edit-button').addEventListener('click', handleEditLast);
-  document.getElementById('dot-ball-button').addEventListener('click', handleDotBall);
+  document.getElementById('keeper-dot-button').addEventListener('click', handleDotBall);
   document.getElementById('wicket-button').addEventListener('click', handleWicket);
   document.getElementById('extra-button').addEventListener('click', handleExtra);
   document.getElementById('declare-button').addEventListener('click', handleDeclare);
   document.getElementById('change-bowler-button').addEventListener('click', handleBowler);
   document.getElementById('add-batter-button').addEventListener('click', handleAddBatter);
   document.getElementById('rotate-button').addEventListener('click', handleRotate);
+  document.getElementById('app-version').textContent = APP_VERSION;
 
   const activeMatchId = getActiveMatchId();
   if (activeMatchId) {
@@ -338,7 +344,7 @@ async function init() {
     }
   }
 
-  renderNewMatchSetup(setupContainer, (newMatch, newInnings) => {
+  renderNewMatchSetup(setupTarget, (newMatch, newInnings) => {
     match = newMatch;
     innings = newInnings;
     showScoringScreen();

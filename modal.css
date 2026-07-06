@@ -5,7 +5,8 @@
    grey buttons everywhere primary actions used to sit. */
 
 .setup-container {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   background: var(--ink);
   background-image: radial-gradient(circle at 50% 0%, rgba(201, 162, 77, 0.06), transparent 60%);
@@ -25,8 +26,10 @@
 
 .setup-subheading {
   font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin: 22px 0 8px 0;
   color: var(--brass);
 }
@@ -207,8 +210,8 @@
   border: 1px solid rgba(242, 239, 228, 0.12);
   color: var(--chalk);
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 
 .run-button:active {
@@ -392,6 +395,8 @@
 }
 
 .summary-field-container .field-svg {
+  display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 1 / 1;
 }

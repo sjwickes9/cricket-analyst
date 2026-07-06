@@ -118,7 +118,8 @@ export function renderField(container) {
   legLabel.textContent = 'LEG SIDE';
   labelsGroup.appendChild(legLabel);
 
-  container.innerHTML = '';
+  const existingSvg = container.querySelector('svg');
+  if (existingSvg) existingSvg.remove();
   container.appendChild(svg);
 
   updateSideLabels(fieldGroup, labelsGroup, 'right');

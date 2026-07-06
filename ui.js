@@ -378,6 +378,7 @@ export function maybeShowWalkthrough() {
         <li>Tap the field where the ball travelled.</li>
         <li>Select the runs scored.</li>
         <li>Save. The wagon wheel updates straight away.</li>
+        <li>Played to the keeper with no shot? Tap "To keeper" near the pitch instead, no need to tap the field.</li>
       </ol>
       <button type="button" class="walkthrough-dismiss">Got it</button>
     </div>

@@ -122,6 +122,19 @@ export function renderField(container) {
   if (existingSvg) existingSvg.remove();
   container.appendChild(svg);
 
+  // The field must always be square, but relying on CSS alone
+  // (height: auto, aspect-ratio) to size an SVG that only carries a
+  // viewBox has proven unreliable once nested inside the summary
+  // screen's layout. Measuring the container directly and setting an
+  // explicit inline pixel size removes that ambiguity entirely: inline
+  // style always wins over any stylesheet rule, so this is the actual
+  // rendered size regardless of what the CSS says.
+  const measuredWidth = container.clientWidth || VIEWBOX_SIZE;
+  const measuredHeight = container.clientHeight || measuredWidth;
+  const size = Math.min(measuredWidth, measuredHeight);
+  svg.style.width = `${size}px`;
+  svg.style.height = `${size}px`;
+
   updateSideLabels(fieldGroup, labelsGroup, 'right');
 
   return { svg, shotsGroup, fieldGroup, labelsGroup };

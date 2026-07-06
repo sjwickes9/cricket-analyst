@@ -30,7 +30,7 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607061800';
+const APP_VERSION = 'v0.2607061945';
 
 let match = null;
 let innings = null;

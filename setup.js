@@ -3,7 +3,7 @@
 // bowler) and the shorter "start next innings" version reused after a
 // declaration or all out. Pure DOM building; match.js does the saving.
 
-import { createMatch, startInnings } from './match.js';
+import { createMatch, startInnings, addPlayersToMatch } from './match.js';
 
 function playerRow(onRemove) {
   const row = document.createElement('div');
@@ -131,13 +131,15 @@ export function renderNewMatchSetup(container, onComplete) {
   });
 }
 
-export function renderOpenersSetup(container, match, onComplete, bannerText) {
+export function renderOpenersSetup(container, match, onComplete, bannerText, eligiblePlayers) {
   container.innerHTML = '';
+
+  const players = eligiblePlayers || match.players;
 
   const wrap = document.createElement('div');
   wrap.className = 'setup-screen';
 
-  const playerOptions = match.players.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+  const playerOptions = players.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
   const bowlerOptions =
     '<option value="">Unknown / not tracked</option>' +
     match.bowlers.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
@@ -161,7 +163,7 @@ export function renderOpenersSetup(container, match, onComplete, bannerText) {
 
   // Default the non-striker select to the second player if available.
   const nonStrikerSelect = wrap.querySelector('#non-striker-select');
-  if (match.players.length > 1) nonStrikerSelect.value = match.players[1].id;
+  if (players.length > 1) nonStrikerSelect.value = players[1].id;
 
   wrap.querySelector('#start-match-button').addEventListener('click', async () => {
     const strikerId = wrap.querySelector('#striker-select').value;
@@ -174,9 +176,79 @@ export function renderOpenersSetup(container, match, onComplete, bannerText) {
       return;
     }
 
-    const battingOrder = match.players.map((p) => p.id);
+    const battingOrder = players.map((p) => p.id);
     const innings = await startInnings({ matchId: match.id, strikerId, nonStrikerId, bowlerId, battingOrder });
     onComplete(match, innings);
+  });
+}
+
+// Asked before setting up any innings after the first: the same team
+// might bat again (a two-innings match for one side), or the other
+// team might be in now, which needs a fresh batting roster.
+export function renderNextInningsChoice(container, match, { onSameTeam, onOtherTeam }) {
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'setup-screen';
+  wrap.innerHTML = `
+    <p class="setup-banner">Innings complete.</p>
+    <h1 class="setup-title">Who is batting next?</h1>
+    <button type="button" id="same-team-button" class="setup-primary-button">Same team, batting again</button>
+    <button type="button" id="other-team-button" class="setup-secondary-button" style="width: 100%; margin-top: 10px;">The other team is batting now</button>
+  `;
+  container.appendChild(wrap);
+
+  wrap.querySelector('#same-team-button').addEventListener('click', onSameTeam);
+  wrap.querySelector('#other-team-button').addEventListener('click', onOtherTeam);
+}
+
+// A fresh batting roster for the side coming in, added to the match's
+// player list (old events keep referencing the old ids untouched) so
+// the innings can be scored the same way as the first.
+export function renderOtherTeamRosterSetup(container, match, onComplete) {
+  container.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'setup-screen';
+  wrap.innerHTML = `
+    <p class="setup-banner">New batting side.</p>
+    <h1 class="setup-title">Who is batting this innings?</h1>
+    <div id="players-list" class="roster-list"></div>
+    <button type="button" id="add-player-button" class="setup-secondary-button">Add batter</button>
+    <button type="button" id="setup-next-button" class="setup-primary-button">Next: pick openers</button>
+    <p id="setup-error" class="setup-error"></p>
+  `;
+  container.appendChild(wrap);
+
+  const playersList = wrap.querySelector('#players-list');
+  const playerRows = [];
+
+  function addPlayerRow() {
+    const { row, nameInput, handedness } = playerRow((r) => {
+      r.remove();
+      const idx = playerRows.findIndex((pr) => pr.row === r);
+      if (idx >= 0) playerRows.splice(idx, 1);
+    });
+    playersList.appendChild(row);
+    playerRows.push({ row, nameInput, handedness });
+  }
+
+  addPlayerRow();
+  addPlayerRow();
+  wrap.querySelector('#add-player-button').addEventListener('click', addPlayerRow);
+
+  wrap.querySelector('#setup-next-button').addEventListener('click', async () => {
+    const errorEl = wrap.querySelector('#setup-error');
+    const newPlayers = playerRows
+      .map((pr) => ({ name: pr.nameInput.value.trim(), handedness: pr.handedness.value }))
+      .filter((p) => p.name.length > 0);
+
+    if (newPlayers.length < 2) {
+      errorEl.textContent = 'Add at least two batters.';
+      return;
+    }
+
+    const { match: updatedMatch, players: addedPlayers } = await addPlayersToMatch(match, newPlayers);
+    renderOpenersSetup(container, updatedMatch, onComplete, null, addedPlayers);
   });
 }
 

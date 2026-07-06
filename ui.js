@@ -253,6 +253,82 @@ export function openAddPersonSheet({ title, showHandedness, onComplete, onCancel
   });
 }
 
+export function openRotateSheet({ currentAngle, onChange, onClose }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'sheet-overlay';
+  const sheet = document.createElement('div');
+  sheet.className = 'bottom-sheet';
+  sheet.innerHTML = `
+    <h2>Rotate view</h2>
+    <p class="setup-hint">Drag to match the direction you are sitting in.</p>
+    <input type="range" id="rotate-slider" class="rotate-slider" min="0" max="359" step="1" value="${currentAngle}" />
+    <div id="rotate-value" class="rotate-value">${currentAngle}°</div>
+    <button type="button" id="rotate-done" class="setup-primary-button">Done</button>
+  `;
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+
+  const slider = sheet.querySelector('#rotate-slider');
+  const valueLabel = sheet.querySelector('#rotate-value');
+  slider.addEventListener('input', () => {
+    const value = Number(slider.value);
+    valueLabel.textContent = `${value}°`;
+    onChange(value);
+  });
+
+  sheet.querySelector('#rotate-done').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    if (onClose) onClose();
+  });
+}
+
+// Lists every bowler on record so far, with an inline way to add a new
+// one. Selecting an existing name, or adding a new one, both set that
+// person as the bowler for the current over in one step, since a
+// bowler added mid-match should immediately become who is bowling.
+export function openBowlerSheet({ bowlers, onSelectExisting, onAddNew }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'sheet-overlay';
+  const sheet = document.createElement('div');
+  sheet.className = 'bottom-sheet';
+
+  const existingRows = bowlers
+    .map((b) => `<button type="button" class="bowler-list-row" data-bowler="${b.id}">${b.name}</button>`)
+    .join('');
+
+  sheet.innerHTML = `
+    <h2>Bowler</h2>
+    <button type="button" class="bowler-list-row" data-bowler="">Unknown / not tracked</button>
+    ${existingRows}
+    <label class="setup-label">Add a new bowler
+      <input type="text" id="new-bowler-name" class="setup-text-input" placeholder="Bowler name" />
+    </label>
+    <button type="button" id="add-new-bowler-button" class="setup-primary-button">Add and set as bowling</button>
+    <button type="button" class="sheet-cancel">Cancel</button>
+  `;
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+
+  sheet.querySelectorAll('.bowler-list-row').forEach((row) => {
+    row.addEventListener('click', () => {
+      const bowlerId = row.dataset.bowler || null;
+      document.body.removeChild(overlay);
+      onSelectExisting(bowlerId);
+    });
+  });
+
+  sheet.querySelector('.sheet-cancel').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  sheet.querySelector('#add-new-bowler-button').addEventListener('click', () => {
+    const name = sheet.querySelector('#new-bowler-name').value.trim();
+    if (!name) return;
+    document.body.removeChild(overlay);
+    onAddNew(name);
+  });
+}
+
 export function openConfirmSheet({ title, message, confirmLabel, onConfirm, onCancel }) {
   const overlay = document.createElement('div');
   overlay.className = 'sheet-overlay';

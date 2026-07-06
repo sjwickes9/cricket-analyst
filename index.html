@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Cricket Analyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="layout.css" />
   <link rel="stylesheet" href="field.css" />
@@ -30,18 +33,18 @@
 
     <div class="bowler-bar">
       <span>Bowling: <strong id="bowler-name"></strong></span>
-      <button type="button" id="change-bowler-button" class="bowler-change-button">Change</button>
+      <button type="button" id="change-bowler-button" class="bowler-change-button">Bowler</button>
     </div>
 
     <div class="roster-bar">
       <button type="button" id="add-batter-button" class="roster-bar-button">Add batter</button>
-      <button type="button" id="add-bowler-button" class="roster-bar-button">Add bowler</button>
       <button type="button" id="rotate-button" class="roster-bar-button" aria-label="Rotate field orientation">Rotate view</button>
     </div>
 
     <main id="field-container" class="field-container" aria-label="Cricket field"></main>
 
     <div class="action-bar">
+      <button type="button" id="dot-ball-button" class="action-bar-button">Dot ball</button>
       <button type="button" id="wicket-button" class="action-bar-button action-bar-button--wicket">Wicket</button>
       <button type="button" id="extra-button" class="action-bar-button">Extra</button>
       <button type="button" id="declare-button" class="action-bar-button">Declare</button>

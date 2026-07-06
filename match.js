@@ -88,6 +88,13 @@ export function getBowlerById(match, bowlerId) {
 // or bowling attack in advance. A new batter is appended to the end of
 // the current innings' batting order (they bat last if not already
 // used); a new bowler simply becomes available to select next.
+export async function addPlayersToMatch(match, newPlayers) {
+  const players = newPlayers.map((p) => ({ id: generateId(), name: p.name, handedness: p.handedness }));
+  const updatedMatch = { ...match, players: [...match.players, ...players] };
+  await saveMatch(updatedMatch);
+  return { match: updatedMatch, players };
+}
+
 export async function addPlayerMidMatch(match, { name, handedness }) {
   const player = { id: generateId(), name, handedness };
   const updatedMatch = { ...match, players: [...match.players, player] };

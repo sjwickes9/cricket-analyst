@@ -2,11 +2,18 @@
 // Turns the current (non-superseded) events for a match into shot
 // markers on the field. This is a view over the event log, never a
 // separate source of truth, per the data model in the project brief.
+//
+// Markers always render at the raw stored angle/distance, exactly
+// where the scorer tapped: that is the ball's real physical position
+// on the field and must never move, regardless of who is batting.
+// Handedness only ever affects the off side / leg side text labels
+// (see field.js), which tell the scorer which side is which for the
+// batter on strike. Mirroring the marker as well would double up with
+// the labels moving and land the dot under the wrong label.
 
 import { CENTRE, BOUNDARY_RADIUS } from './field.js';
-import { polarToPoint, displayAngleForHandedness } from './utils.js';
+import { polarToPoint } from './utils.js';
 import { currentEvents } from './innings.js';
-import { getPlayerById } from './match.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -19,17 +26,18 @@ const RUN_COLOUR = {
   6: 'var(--run-six)',
 };
 
-export function renderWagonWheel(shotsGroup, match, events) {
+export function renderWagonWheel(shotsGroup, events) {
   shotsGroup.innerHTML = '';
 
   for (const event of currentEvents(events)) {
     if (event.extraType) continue;
     if (event.wicket) continue;
+    // angle 0 / distance 0 is the sentinel used for deliveries with no
+    // real shot position (quick dot ball, extras, wickets), not a
+    // genuine tap at the exact centre.
+    if (event.angle === 0 && event.distance === 0) continue;
 
-    const batter = getPlayerById(match, event.strikerBatterId);
-    const handedness = batter ? batter.handedness : 'right';
-    const displayAngle = displayAngleForHandedness(event.angle, handedness);
-    const { x, y } = polarToPoint(displayAngle, event.distance, CENTRE, CENTRE, BOUNDARY_RADIUS);
+    const { x, y } = polarToPoint(event.angle, event.distance, CENTRE, CENTRE, BOUNDARY_RADIUS);
 
     const marker = document.createElementNS(SVG_NS, 'circle');
     marker.setAttribute('cx', x);

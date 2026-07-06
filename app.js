@@ -5,7 +5,7 @@
 
 import { renderField, onFieldTap, getOrientation, setOrientation, updateSideLabels } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
-import { openBottomSheet, openExtraSheet, openWicketSheet, openConfirmSheet, openAddPersonSheet, showToast, maybeShowWalkthrough } from './ui.js';
+import { openBottomSheet, openExtraSheet, openWicketSheet, openConfirmSheet, openAddPersonSheet, openRotateSheet, openBowlerSheet, showToast, maybeShowWalkthrough } from './ui.js';
 import { getEventsForMatch } from './storage.js';
 import { computeLiveState, computeBatterStats } from './innings.js';
 import {
@@ -21,12 +21,11 @@ import {
   appendToBattingOrder,
   clearActiveMatchId,
 } from './match.js';
-import { renderNewMatchSetup, renderNextInningsSetup } from './setup.js';
+import { renderNewMatchSetup, renderNextInningsSetup, renderNextInningsChoice, renderOtherTeamRosterSetup } from './setup.js';
 import { renderInningsSummary } from './summary.js';
 import { recordShot, recordWicket, undoLastEvent, editEvent, getLastEvent } from './scoring.js';
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
-const ORIENTATION_STEPS = [0, 90, 180, 270];
 
 let match = null;
 let innings = null;
@@ -41,7 +40,7 @@ async function currentInningsEvents() {
 
 async function refresh() {
   const events = await currentInningsEvents();
-  renderWagonWheel(shotsGroup, match, events);
+  renderWagonWheel(shotsGroup, events);
 
   const state = computeLiveState(innings, events);
   updateStatusBar(state);
@@ -67,6 +66,16 @@ function updateStatusBar(state) {
   if (fieldGroup && labelsGroup) {
     updateSideLabels(fieldGroup, labelsGroup, striker ? striker.handedness : 'right');
   }
+}
+
+// A ball that goes straight through to the keeper untouched has no
+// real shot position, so this skips the tap-and-select flow entirely.
+// angle 0 / distance 0 is the same "no real position" sentinel already
+// used for extras and wickets.
+async function handleDotBall() {
+  await recordShot({ matchId: match.id, innings, angle: 0, distance: 0, runs: 0 });
+  await refresh();
+  showToast('Dot ball recorded');
 }
 
 function handleFieldTap({ angle, distance }) {
@@ -171,20 +180,24 @@ function handleDeclare() {
   });
 }
 
-function handleChangeBowler() {
-  const names = ['Unknown / not tracked', ...match.bowlers.map((b) => b.name)];
-  openBottomSheet({
-    title: 'Change bowler',
-    runOptions: names,
-    onSelect: async (name) => {
-      const bowler = match.bowlers.find((b) => b.name === name);
-      innings = await setCurrentBowler(innings, bowler ? bowler.id : null);
+function handleBowler() {
+  openBowlerSheet({
+    bowlers: match.bowlers,
+    onSelectExisting: async (bowlerId) => {
+      const bowler = bowlerId ? match.bowlers.find((b) => b.id === bowlerId) : null;
+      innings = await setCurrentBowler(innings, bowlerId);
       await refresh();
       showToast(bowler ? `${bowler.name} is now bowling` : 'Bowler set to unknown');
     },
+    onAddNew: async (name) => {
+      const { match: updatedMatch, bowler } = await addBowlerMidMatch(match, { name });
+      match = updatedMatch;
+      innings = await setCurrentBowler(innings, bowler.id);
+      await refresh();
+      showToast(`${bowler.name} added and is now bowling`);
+    },
   });
 }
-
 function handleAddBatter() {
   openAddPersonSheet({
     title: 'Add batter',
@@ -199,30 +212,22 @@ function handleAddBatter() {
   });
 }
 
-function handleAddBowler() {
-  openAddPersonSheet({
-    title: 'Add bowler',
-    showHandedness: false,
-    onComplete: async ({ name }) => {
-      const { match: updatedMatch } = await addBowlerMidMatch(match, { name });
-      match = updatedMatch;
-      await refresh();
-      showToast(`${name} added to the bowlers`);
-    },
-  });
-}
-
 function orientationStorageKey() {
   return `cricket-analyst-orientation-${match.id}`;
 }
 
 function handleRotate() {
-  const current = getOrientation(fieldGroup);
-  const currentIndex = ORIENTATION_STEPS.indexOf(current);
-  const next = ORIENTATION_STEPS[(currentIndex + 1) % ORIENTATION_STEPS.length];
-  setOrientation(fieldGroup, next);
-  localStorage.setItem(orientationStorageKey(), String(next));
-  refresh();
+  const startingAngle = getOrientation(fieldGroup);
+  openRotateSheet({
+    currentAngle: startingAngle,
+    onChange: (angle) => {
+      setOrientation(fieldGroup, angle);
+      refresh();
+    },
+    onClose: () => {
+      localStorage.setItem(orientationStorageKey(), String(getOrientation(fieldGroup)));
+    },
+  });
 }
 
 function showScoringScreen() {
@@ -287,10 +292,15 @@ function startNextInningsFlow() {
   const setupContainer = document.getElementById('setup-container');
   setupContainer.style.display = 'block';
 
-  renderNextInningsSetup(setupContainer, match, (updatedMatch, newInnings) => {
+  const onInningsReady = (updatedMatch, newInnings) => {
     match = updatedMatch;
     innings = newInnings;
     showScoringScreen();
+  };
+
+  renderNextInningsChoice(setupContainer, match, {
+    onSameTeam: () => renderNextInningsSetup(setupContainer, match, onInningsReady),
+    onOtherTeam: () => renderOtherTeamRosterSetup(setupContainer, match, onInningsReady),
   });
 }
 
@@ -299,12 +309,12 @@ async function init() {
 
   document.getElementById('undo-button').addEventListener('click', handleUndo);
   document.getElementById('edit-button').addEventListener('click', handleEditLast);
+  document.getElementById('dot-ball-button').addEventListener('click', handleDotBall);
   document.getElementById('wicket-button').addEventListener('click', handleWicket);
   document.getElementById('extra-button').addEventListener('click', handleExtra);
   document.getElementById('declare-button').addEventListener('click', handleDeclare);
-  document.getElementById('change-bowler-button').addEventListener('click', handleChangeBowler);
+  document.getElementById('change-bowler-button').addEventListener('click', handleBowler);
   document.getElementById('add-batter-button').addEventListener('click', handleAddBatter);
-  document.getElementById('add-bowler-button').addEventListener('click', handleAddBowler);
   document.getElementById('rotate-button').addEventListener('click', handleRotate);
 
   const activeMatchId = getActiveMatchId();

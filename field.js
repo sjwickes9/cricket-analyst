@@ -23,12 +23,27 @@ export const BOUNDARY_RADIUS = 270;
 const OFF_SIDE_CANONICAL_ANGLE = 90;
 const LEG_SIDE_CANONICAL_ANGLE = 270;
 
+let instanceCounter = 0;
+
 export function renderField(container) {
+  instanceCounter += 1;
+  const gradientId = `turf-gradient-${instanceCounter}`;
+
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`);
   svg.setAttribute('class', 'field-svg');
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', 'Cricket field, tap to record where the ball went');
+
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  defs.innerHTML = `
+    <radialGradient id="${gradientId}" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="var(--field-green-light)" />
+      <stop offset="60%" stop-color="var(--field-green)" />
+      <stop offset="100%" stop-color="var(--field-green-dark)" />
+    </radialGradient>
+  `;
+  svg.appendChild(defs);
 
   // Everything that represents the physical field (and the shots on
   // it) lives inside this rotatable group. Rotating it never touches
@@ -43,7 +58,15 @@ export function renderField(container) {
   boundary.setAttribute('cy', CENTRE);
   boundary.setAttribute('r', BOUNDARY_RADIUS);
   boundary.setAttribute('class', 'field-boundary');
+  boundary.setAttribute('fill', `url(#${gradientId})`);
   fieldGroup.appendChild(boundary);
+
+  const rope = document.createElementNS(SVG_NS, 'circle');
+  rope.setAttribute('cx', CENTRE);
+  rope.setAttribute('cy', CENTRE);
+  rope.setAttribute('r', BOUNDARY_RADIUS - 6);
+  rope.setAttribute('class', 'field-boundary-rope');
+  fieldGroup.appendChild(rope);
 
   const thirtyYard = document.createElementNS(SVG_NS, 'circle');
   thirtyYard.setAttribute('cx', CENTRE);

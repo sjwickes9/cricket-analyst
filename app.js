@@ -3,11 +3,11 @@
 // innings, then the live scoring screen. Holds the current match and
 // innings in memory but always re-derives live state from storage.
 
-import { renderField, onFieldTap, getOrientation, setOrientation } from './field.js';
+import { renderField, onFieldTap, getOrientation, setOrientation, updateSideLabels } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
 import { openBottomSheet, openExtraSheet, openWicketSheet, openConfirmSheet, openAddPersonSheet, showToast, maybeShowWalkthrough } from './ui.js';
 import { getEventsForMatch } from './storage.js';
-import { computeLiveState } from './innings.js';
+import { computeLiveState, computeBatterStats } from './innings.js';
 import {
   getActiveMatchId,
   getMatch,
@@ -19,8 +19,10 @@ import {
   addPlayerMidMatch,
   addBowlerMidMatch,
   appendToBattingOrder,
+  clearActiveMatchId,
 } from './match.js';
 import { renderNewMatchSetup, renderNextInningsSetup } from './setup.js';
+import { renderInningsSummary } from './summary.js';
 import { recordShot, recordWicket, undoLastEvent, editEvent, getLastEvent } from './scoring.js';
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
@@ -30,6 +32,7 @@ let match = null;
 let innings = null;
 let shotsGroup = null;
 let fieldGroup = null;
+let labelsGroup = null;
 
 async function currentInningsEvents() {
   const allEvents = await getEventsForMatch(match.id);
@@ -46,7 +49,7 @@ async function refresh() {
   if (state.allOut && innings.status === 'in-progress') {
     innings = await setInningsStatus(innings, 'all-out');
     showToast('All out');
-    startNextInningsFlow();
+    showInningsSummary();
   }
 }
 
@@ -60,6 +63,10 @@ function updateStatusBar(state) {
   document.getElementById('striker-name').textContent = `${striker ? striker.name : '?'} *`;
   document.getElementById('non-striker-name').textContent = nonStriker ? nonStriker.name : '?';
   document.getElementById('bowler-name').textContent = bowler ? bowler.name : 'Unknown';
+
+  if (fieldGroup && labelsGroup) {
+    updateSideLabels(fieldGroup, labelsGroup, striker ? striker.handedness : 'right');
+  }
 }
 
 function handleFieldTap({ angle, distance }) {
@@ -159,7 +166,7 @@ function handleDeclare() {
     onConfirm: async () => {
       innings = await setInningsStatus(innings, 'declared');
       showToast('Innings declared');
-      startNextInningsFlow();
+      showInningsSummary();
     },
   });
 }
@@ -215,6 +222,7 @@ function handleRotate() {
   const next = ORIENTATION_STEPS[(currentIndex + 1) % ORIENTATION_STEPS.length];
   setOrientation(fieldGroup, next);
   localStorage.setItem(orientationStorageKey(), String(next));
+  refresh();
 }
 
 function showScoringScreen() {
@@ -223,9 +231,10 @@ function showScoringScreen() {
   screen.style.display = 'flex';
 
   const fieldContainer = document.getElementById('field-container');
-  const { svg, shotsGroup: group, fieldGroup: fg } = renderField(fieldContainer);
+  const { svg, shotsGroup: group, fieldGroup: fg, labelsGroup: lg } = renderField(fieldContainer);
   shotsGroup = group;
   fieldGroup = fg;
+  labelsGroup = lg;
 
   const savedOrientation = Number(localStorage.getItem(orientationStorageKey())) || 0;
   setOrientation(fieldGroup, savedOrientation);
@@ -233,6 +242,43 @@ function showScoringScreen() {
   onFieldTap(svg, fieldGroup, handleFieldTap);
 
   refresh();
+}
+
+async function showInningsSummary() {
+  const screen = document.getElementById('scoring-screen');
+  screen.style.display = 'none';
+  const setupContainer = document.getElementById('setup-container');
+  setupContainer.style.display = 'block';
+
+  const events = await currentInningsEvents();
+  const batterStats = computeBatterStats(innings, events);
+
+  renderInningsSummary(setupContainer, match, innings, events, batterStats, {
+    onStartNextInnings: () => startNextInningsFlow(),
+    onFinish: () => showMatchFinished(),
+  });
+}
+
+function showMatchFinished() {
+  const setupContainer = document.getElementById('setup-container');
+  setupContainer.innerHTML = `
+    <div class="setup-screen">
+      <h1 class="setup-title">Match finished</h1>
+      <p class="setup-hint">Thanks for scoring. Nothing more is recorded for this match on this device.</p>
+      <button type="button" id="new-match-button" class="setup-primary-button">Start a new match</button>
+    </div>
+  `;
+  clearActiveMatchId();
+  setupContainer.querySelector('#new-match-button').addEventListener('click', () => {
+    match = null;
+    innings = null;
+    renderNewMatchSetup(setupContainer, (newMatch, newInnings) => {
+      match = newMatch;
+      innings = newInnings;
+      showScoringScreen();
+      maybeShowWalkthrough();
+    });
+  });
 }
 
 function startNextInningsFlow() {
@@ -276,11 +322,7 @@ async function init() {
       if (existingInnings) {
         match = existingMatch;
         innings = existingInnings;
-        renderNextInningsSetup(setupContainer, match, (updatedMatch, newInnings) => {
-          match = updatedMatch;
-          innings = newInnings;
-          showScoringScreen();
-        });
+        showInningsSummary();
         return;
       }
     }

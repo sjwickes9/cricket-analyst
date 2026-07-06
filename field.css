@@ -35,3 +35,11 @@
   stroke: var(--ink);
   stroke-width: 1;
 }
+
+.field-side-label {
+  fill: rgba(255, 255, 255, 0.55);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}

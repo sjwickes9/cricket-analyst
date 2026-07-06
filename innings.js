@@ -89,3 +89,41 @@ export function computeLiveState(innings, events) {
     nextBatterId,
   };
 }
+
+// Per-batter runs, balls faced and dismissal, for the end of innings
+// summary. Runs off the bat only (byes, leg byes and wides are not
+// credited to the batter); balls faced excludes wides since those are
+// not legitimately faced, but includes no balls, byes and leg byes.
+export function computeBatterStats(innings, events) {
+  const stats = new Map();
+
+  function statsFor(playerId) {
+    if (!stats.has(playerId)) {
+      stats.set(playerId, { playerId, runs: 0, ballsFaced: 0, out: false, dismissalType: null, dismissalBowlerId: null });
+    }
+    return stats.get(playerId);
+  }
+
+  innings.openers.forEach(statsFor);
+
+  for (const event of currentEvents(events)) {
+    const striker = statsFor(event.strikerBatterId);
+
+    if (event.extraType !== 'wide') {
+      striker.ballsFaced += 1;
+    }
+    if (!event.extraType || event.extraType === 'noball') {
+      striker.runs += event.runs;
+    }
+
+    if (event.wicket && event.dismissedBatterId) {
+      const dismissed = statsFor(event.dismissedBatterId);
+      dismissed.out = true;
+      dismissed.dismissalType = event.dismissalType;
+      dismissed.dismissalBowlerId = event.bowlerId;
+      if (event.incomingBatterId) statsFor(event.incomingBatterId);
+    }
+  }
+
+  return innings.battingOrder.filter((id) => stats.has(id)).map((id) => stats.get(id));
+}

@@ -10,12 +10,18 @@
 // simply subtracts the current orientation before reporting a tap, so
 // what gets stored is always relative to the canonical, unrotated field.
 
-import { tapToPolar } from './utils.js';
+import { tapToPolar, polarToPoint, displayAngleForHandedness } from './utils.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 export const VIEWBOX_SIZE = 600;
 export const CENTRE = VIEWBOX_SIZE / 2;
 export const BOUNDARY_RADIUS = 270;
+
+// Canonical angles for the side labels, before handedness mirroring.
+// 90 and 270 put them either side of the pitch for a right handed
+// batter, matching the same convention used for shot markers.
+const OFF_SIDE_CANONICAL_ANGLE = 90;
+const LEG_SIDE_CANONICAL_ANGLE = 270;
 
 export function renderField(container) {
   const svg = document.createElementNS(SVG_NS, 'svg');
@@ -68,10 +74,54 @@ export function renderField(container) {
   shotsGroup.setAttribute('class', 'field-shots');
   fieldGroup.appendChild(shotsGroup);
 
+  // Off side and leg side labels sit outside the rotatable group so
+  // the text itself always stays upright and legible, even though
+  // their position tracks both field orientation and handedness (see
+  // updateSideLabels). This is the visible, at-a-glance confirmation
+  // that mirroring is working correctly for the batter on strike.
+  const labelsGroup = document.createElementNS(SVG_NS, 'g');
+  labelsGroup.setAttribute('class', 'field-side-labels');
+  svg.appendChild(labelsGroup);
+
+  const offLabel = document.createElementNS(SVG_NS, 'text');
+  offLabel.setAttribute('class', 'field-side-label');
+  offLabel.setAttribute('text-anchor', 'middle');
+  offLabel.textContent = 'OFF SIDE';
+  labelsGroup.appendChild(offLabel);
+
+  const legLabel = document.createElementNS(SVG_NS, 'text');
+  legLabel.setAttribute('class', 'field-side-label');
+  legLabel.setAttribute('text-anchor', 'middle');
+  legLabel.textContent = 'LEG SIDE';
+  labelsGroup.appendChild(legLabel);
+
   container.innerHTML = '';
   container.appendChild(svg);
 
-  return { svg, shotsGroup, fieldGroup };
+  updateSideLabels(fieldGroup, labelsGroup, 'right');
+
+  return { svg, shotsGroup, fieldGroup, labelsGroup };
+}
+
+// Positions the off/leg side labels using the same handedness mirror
+// applied to shot markers, plus the field's current orientation, so
+// the labels always match what the scorer sees, whichever way the
+// field is currently rotated. The text elements themselves are never
+// rotated, so they stay upright and readable.
+export function updateSideLabels(fieldGroup, labelsGroup, handedness) {
+  const orientation = getOrientation(fieldGroup);
+  const [offLabel, legLabel] = labelsGroup.children;
+
+  const offAngle = (displayAngleForHandedness(OFF_SIDE_CANONICAL_ANGLE, handedness) + orientation) % 360;
+  const legAngle = (displayAngleForHandedness(LEG_SIDE_CANONICAL_ANGLE, handedness) + orientation) % 360;
+
+  const offPoint = polarToPoint(offAngle, 92, CENTRE, CENTRE, BOUNDARY_RADIUS);
+  const legPoint = polarToPoint(legAngle, 92, CENTRE, CENTRE, BOUNDARY_RADIUS);
+
+  offLabel.setAttribute('x', offPoint.x);
+  offLabel.setAttribute('y', offPoint.y);
+  legLabel.setAttribute('x', legPoint.x);
+  legLabel.setAttribute('y', legPoint.y);
 }
 
 export function getOrientation(fieldGroup) {

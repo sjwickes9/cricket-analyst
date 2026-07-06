@@ -56,15 +56,18 @@ body {
 
 .app-brand {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 6px 0;
-  text-align: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.28em;
-  color: var(--brass);
-  background: var(--ink-raised);
-  border-bottom: 1px solid rgba(201, 162, 77, 0.25);
+  background: var(--chalk);
+  border-bottom: 2px solid var(--brass);
+}
+
+.app-brand-logo {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .app-version {

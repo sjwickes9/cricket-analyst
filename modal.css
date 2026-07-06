@@ -391,6 +391,7 @@
 .summary-field-container {
   width: 100%;
   max-width: 360px;
+  aspect-ratio: 1 / 1;
   margin: 10px auto 0;
 }
 

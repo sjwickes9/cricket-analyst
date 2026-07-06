@@ -11,7 +11,7 @@
 // roadmap. Tracking the opposition's own batting order is out of scope.
 
 import { generateId } from './utils.js';
-import { saveMatch, getMatch, saveInnings, getAllInningsForMatch, getLatestInnings } from './storage.js';
+import { saveMatch, getMatch, saveInnings, getAllInningsForMatch, getLatestInnings, deleteMatchCompletely } from './storage.js';
 
 const ACTIVE_MATCH_KEY = 'cricket-analyst-active-match-id';
 
@@ -113,6 +113,11 @@ export async function appendToBattingOrder(innings, playerId) {
   const updated = { ...innings, battingOrder: [...innings.battingOrder, playerId] };
   await saveInnings(updated);
   return updated;
+}
+
+export async function abandonMatch(matchId) {
+  await deleteMatchCompletely(matchId);
+  clearActiveMatchId();
 }
 
 export { getMatch };

@@ -20,6 +20,7 @@ import {
   addBowlerMidMatch,
   appendToBattingOrder,
   clearActiveMatchId,
+  abandonMatch,
 } from './match.js';
 import { renderNewMatchSetup, renderNextInningsSetup, renderNextInningsChoice, renderOtherTeamRosterSetup } from './setup.js';
 import { renderInningsSummary } from './summary.js';
@@ -29,13 +30,28 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607061530';
+const APP_VERSION = 'v0.2607061800';
 
 let match = null;
 let innings = null;
 let shotsGroup = null;
 let fieldGroup = null;
 let labelsGroup = null;
+let busy = false;
+
+// Wraps any handler that records an event, so a second tap arriving
+// while the first is still being written to storage is simply ignored
+// rather than racing it: both would otherwise read the same "current"
+// state and could produce inconsistent over/ball bookkeeping.
+async function withLock(fn) {
+  if (busy) return;
+  busy = true;
+  try {
+    await fn();
+  } finally {
+    busy = false;
+  }
+}
 
 async function currentInningsEvents() {
   const allEvents = await getEventsForMatch(match.id);
@@ -78,9 +94,11 @@ function updateStatusBar(state) {
 // happened. angle 0 / distance 0 is the same "no real position"
 // sentinel already used for extras and wickets.
 async function handleDotBall() {
-  await recordShot({ matchId: match.id, innings, angle: 0, distance: 0, runs: 0 });
-  await refresh();
-  showToast('Played to keeper, dot ball recorded');
+  await withLock(async () => {
+    await recordShot({ matchId: match.id, innings, angle: 0, distance: 0, runs: 0 });
+    await refresh();
+    showToast('Played to keeper, dot ball recorded');
+  });
 }
 
 function handleFieldTap({ angle, distance }) {
@@ -88,21 +106,25 @@ function handleFieldTap({ angle, distance }) {
     title: 'Runs scored',
     runOptions: RUN_OPTIONS,
     onSelect: async (runs) => {
-      await recordShot({ matchId: match.id, innings, angle, distance, runs });
-      await refresh();
-      showToast(`${runs} run${runs === 1 ? '' : 's'} recorded`);
+      await withLock(async () => {
+        await recordShot({ matchId: match.id, innings, angle, distance, runs });
+        await refresh();
+        showToast(`${runs} run${runs === 1 ? '' : 's'} recorded`);
+      });
     },
   });
 }
 
 async function handleUndo() {
-  const removed = await undoLastEvent(match.id, innings.inningsNumber);
-  if (!removed) {
-    showToast('Nothing to undo');
-    return;
-  }
-  await refresh();
-  showToast('Last ball undone');
+  await withLock(async () => {
+    const removed = await undoLastEvent(match.id, innings.inningsNumber);
+    if (!removed) {
+      showToast('Nothing to undo');
+      return;
+    }
+    await refresh();
+    showToast('Last ball undone');
+  });
 }
 
 async function handleEditLast() {
@@ -120,9 +142,11 @@ async function handleEditLast() {
     title: 'Edit last ball',
     runOptions: RUN_OPTIONS,
     onSelect: async (runs) => {
-      await editEvent(last, { runs });
-      await refresh();
-      showToast('Last ball updated');
+      await withLock(async () => {
+        await editEvent(last, { runs });
+        await refresh();
+        showToast('Last ball updated');
+      });
     },
   });
 }
@@ -130,9 +154,11 @@ async function handleEditLast() {
 async function handleExtra() {
   openExtraSheet({
     onComplete: async ({ extraType, extraRuns, runs }) => {
-      await recordShot({ matchId: match.id, innings, angle: 0, distance: 0, runs, extraType, extraRuns });
-      await refresh();
-      showToast('Extra recorded');
+      await withLock(async () => {
+        await recordShot({ matchId: match.id, innings, angle: 0, distance: 0, runs, extraType, extraRuns });
+        await refresh();
+        showToast('Extra recorded');
+      });
     },
   });
 }
@@ -157,17 +183,19 @@ async function handleWicket() {
     nonStriker,
     remainingBatters,
     onComplete: async ({ dismissalType, dismissedBatterId, incomingBatterId }) => {
-      await recordWicket({
-        matchId: match.id,
-        innings,
-        angle: 0,
-        distance: 0,
-        dismissalType,
-        dismissedBatterId,
-        incomingBatterId,
+      await withLock(async () => {
+        await recordWicket({
+          matchId: match.id,
+          innings,
+          angle: 0,
+          distance: 0,
+          dismissalType,
+          dismissedBatterId,
+          incomingBatterId,
+        });
+        await refresh();
+        showToast('Wicket recorded');
       });
-      await refresh();
-      showToast('Wicket recorded');
     },
   });
 }
@@ -213,6 +241,29 @@ function handleAddBatter() {
       innings = await appendToBattingOrder(innings, player.id);
       await refresh();
       showToast(`${name} added to the batting order`);
+    },
+  });
+}
+
+function handleReturnToStart() {
+  openConfirmSheet({
+    title: 'Return to start',
+    message: 'All data for this match, every innings and every ball, will be permanently deleted from this device. This cannot be undone.',
+    confirmLabel: 'Yes, delete this match',
+    onConfirm: async () => {
+      const matchId = match.id;
+      match = null;
+      innings = null;
+      document.getElementById('scoring-screen').style.display = 'none';
+      document.getElementById('setup-container').style.display = 'block';
+      await abandonMatch(matchId);
+      const setupTarget = document.getElementById('setup-target');
+      renderNewMatchSetup(setupTarget, (newMatch, newInnings) => {
+        match = newMatch;
+        innings = newInnings;
+        showScoringScreen();
+        maybeShowWalkthrough();
+      });
     },
   });
 }
@@ -321,6 +372,7 @@ async function init() {
   document.getElementById('change-bowler-button').addEventListener('click', handleBowler);
   document.getElementById('add-batter-button').addEventListener('click', handleAddBatter);
   document.getElementById('rotate-button').addEventListener('click', handleRotate);
+  document.getElementById('return-to-start-button').addEventListener('click', handleReturnToStart);
   document.getElementById('app-version').textContent = APP_VERSION;
 
   const activeMatchId = getActiveMatchId();

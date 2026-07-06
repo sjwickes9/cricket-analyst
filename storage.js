@@ -138,3 +138,25 @@ export async function getLatestInnings(matchId) {
   if (all.length === 0) return null;
   return all.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
 }
+
+// --- full deletion -------------------------------------------------------
+
+// Used by "return to start": removes the match record, every innings
+// belonging to it, and every event belonging to it. This is a genuine,
+// irreversible deletion (not a supersede), since the whole point is to
+// discard a match entirely, not correct one delivery within it.
+export async function deleteMatchCompletely(matchId) {
+  const [events, innings] = await Promise.all([getEventsForMatch(matchId), getAllInningsForMatch(matchId)]);
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([EVENTS_STORE, INNINGS_STORE, MATCHES_STORE], 'readwrite');
+
+    events.forEach((e) => tx.objectStore(EVENTS_STORE).delete(e.id));
+    innings.forEach((i) => tx.objectStore(INNINGS_STORE).delete(i.id));
+    tx.objectStore(MATCHES_STORE).delete(matchId);
+
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}

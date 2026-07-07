@@ -31,7 +31,7 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607070930';
+const APP_VERSION = 'v0.2607071015';
 
 let match = null;
 let innings = null;
@@ -44,12 +44,29 @@ let busy = false;
 // while the first is still being written to storage is simply ignored
 // rather than racing it: both would otherwise read the same "current"
 // state and could produce inconsistent over/ball bookkeeping.
+//
+// Two safety nets, both added after a report of the button silently
+// doing nothing: a hard timeout so the lock can never stay stuck
+// forever if something upstream stalls (a backgrounded tab pausing an
+// IndexedDB write, for instance), and an explicit catch so a genuine
+// failure is always visible, never a silent no-op.
 async function withLock(fn) {
-  if (busy) return;
+  if (busy) {
+    showToast('Still saving the last ball, one moment');
+    return;
+  }
   busy = true;
+  const releaseTimer = setTimeout(() => {
+    busy = false;
+  }, 5000);
+
   try {
     await fn();
+  } catch (error) {
+    console.error('Action failed:', error);
+    showToast('Something went wrong, please try again');
   } finally {
+    clearTimeout(releaseTimer);
     busy = false;
   }
 }

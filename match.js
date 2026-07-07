@@ -88,9 +88,15 @@ export function getBowlerById(match, bowlerId) {
 // own players (who batted first) but very few of the opposition, so
 // once the sides swap, the new bowlers are almost always names already
 // entered as batters. Anywhere a bowler is picked or set, offer both
-// the dedicated bowlers list and every player ever entered as a batter.
-export function getBowlerCandidates(match) {
-  return [...match.bowlers.map((b) => ({ id: b.id, name: b.name })), ...match.players.map((p) => ({ id: p.id, name: p.name }))];
+// the dedicated bowlers list and every player ever entered as a batter,
+// except whoever is currently batting: they can't also be bowling to
+// themselves in the same innings.
+export function getBowlerCandidates(match, excludePlayerIds = []) {
+  const excludeSet = new Set(excludePlayerIds);
+  return [
+    ...match.bowlers.map((b) => ({ id: b.id, name: b.name })),
+    ...match.players.filter((p) => !excludeSet.has(p.id)).map((p) => ({ id: p.id, name: p.name })),
+  ];
 }
 
 // Mid-innings additions: amateur teams often do not know their full XI

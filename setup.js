@@ -142,7 +142,10 @@ export function renderOpenersSetup(container, match, onComplete, bannerText, eli
   const playerOptions = players.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
   const bowlerOptions =
     '<option value="">Unknown / not tracked</option>' +
-    getBowlerCandidates(match)
+    getBowlerCandidates(
+      match,
+      players.map((p) => p.id)
+    )
       .map((b) => `<option value="${b.id}">${b.name}</option>`)
       .join('');
 

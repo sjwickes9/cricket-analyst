@@ -25,6 +25,7 @@ export const BOUNDARY_RADIUS = 270;
 // pitch, the crease marker, and every polar conversion use CREASE_Y.
 const PITCH_LENGTH = 90;
 export const CREASE_Y = CENTRE + PITCH_LENGTH / 2;
+export const CREASE_OFFSET = PITCH_LENGTH / 2;
 
 // Canonical angles for the side labels, before handedness mirroring.
 // 90 and 270 put them either side of the pitch for a right handed
@@ -161,8 +162,8 @@ export function updateSideLabels(fieldGroup, labelsGroup, handedness) {
   const offAngle = (displayAngleForHandedness(OFF_SIDE_CANONICAL_ANGLE, handedness) + orientation) % 360;
   const legAngle = (displayAngleForHandedness(LEG_SIDE_CANONICAL_ANGLE, handedness) + orientation) % 360;
 
-  const offPoint = polarToPoint(offAngle, 92, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
-  const legPoint = polarToPoint(legAngle, 92, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
+  const offPoint = polarToPoint(offAngle, 92, CENTRE, CREASE_Y, BOUNDARY_RADIUS, CREASE_OFFSET);
+  const legPoint = polarToPoint(legAngle, 92, CENTRE, CREASE_Y, BOUNDARY_RADIUS, CREASE_OFFSET);
 
   offLabel.setAttribute('x', offPoint.x);
   offLabel.setAttribute('y', offPoint.y);
@@ -188,7 +189,7 @@ export function onFieldTap(svg, fieldGroup, handler) {
     point.y = event.clientY;
     const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
 
-    const raw = tapToPolar(svgPoint.x, svgPoint.y, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
+    const raw = tapToPolar(svgPoint.x, svgPoint.y, CENTRE, CREASE_Y, BOUNDARY_RADIUS, CREASE_OFFSET);
     const orientation = getOrientation(fieldGroup);
     // The field is visually rotated by `orientation` degrees, so a tap
     // at a given screen position corresponds to a canonical angle that

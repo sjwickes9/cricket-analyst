@@ -31,7 +31,7 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607062230';
+const APP_VERSION = 'v0.2607070930';
 
 let match = null;
 let innings = null;
@@ -61,9 +61,15 @@ async function currentInningsEvents() {
 
 async function refresh() {
   const events = await currentInningsEvents();
-  renderWagonWheel(shotsGroup, events);
-
   const state = computeLiveState(innings, events);
+
+  // Live scoring only shows the current over, clearing as each over
+  // starts, so the field never gets too busy to read mid-innings. The
+  // full innings' shots for a batter are only shown on the summary
+  // screen, complete with stroke lines, once the innings is over.
+  const currentOverEvents = events.filter((e) => e.over === state.over);
+  renderWagonWheel(shotsGroup, currentOverEvents);
+
   updateStatusBar(state);
 
   if (state.allOut && innings.status === 'in-progress') {
@@ -216,7 +222,7 @@ function handleDeclare() {
 
 function handleBowler() {
   openBowlerSheet({
-    bowlers: getBowlerCandidates(match),
+    bowlers: getBowlerCandidates(match, innings.battingOrder),
     onSelectExisting: async (bowlerId) => {
       const bowler = bowlerId ? getBowlerById(match, bowlerId) : null;
       innings = await setCurrentBowler(innings, bowlerId);

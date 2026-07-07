@@ -79,7 +79,7 @@ export function renderInningsSummary(container, match, innings, events, batterSt
 
       const { shotsGroup, fieldGroup, labelsGroup } = renderField(fieldContainer);
       const batterEvents = events.filter((e) => e.strikerBatterId === stat.playerId);
-      renderWagonWheel(shotsGroup, batterEvents);
+      renderWagonWheel(shotsGroup, batterEvents, { showLines: true });
       updateSideLabels(fieldGroup, labelsGroup, player.handedness);
     });
 

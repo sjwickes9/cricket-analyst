@@ -11,7 +11,7 @@
 // batter on strike. Mirroring the marker as well would double up with
 // the labels moving and land the dot under the wrong label.
 
-import { CENTRE, CREASE_Y, BOUNDARY_RADIUS } from './field.js';
+import { CENTRE, CREASE_Y, CREASE_OFFSET, BOUNDARY_RADIUS } from './field.js';
 import { polarToPoint } from './utils.js';
 import { currentEvents } from './innings.js';
 
@@ -26,7 +26,14 @@ const RUN_COLOUR = {
   6: 'var(--run-six)',
 };
 
-export function renderWagonWheel(shotsGroup, events) {
+// showLines is off by default: during live scoring the wagon wheel
+// only shows dots for the current over (the caller is responsible for
+// scoping `events` to that over, this module has no notion of "now"),
+// and drawing a stroke line for every one of those quickly clutters the
+// field. The full innings summary passes showLines: true, where every
+// delivery for a batter is shown at once and the line is what actually
+// shows shot direction rather than just where it landed.
+export function renderWagonWheel(shotsGroup, events, { showLines = false } = {}) {
   shotsGroup.innerHTML = '';
 
   for (const event of currentEvents(events)) {
@@ -37,16 +44,18 @@ export function renderWagonWheel(shotsGroup, events) {
     // genuine tap at the exact centre.
     if (event.angle === 0 && event.distance === 0) continue;
 
-    const { x, y } = polarToPoint(event.angle, event.distance, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
+    const { x, y } = polarToPoint(event.angle, event.distance, CENTRE, CREASE_Y, BOUNDARY_RADIUS, CREASE_OFFSET);
 
-    const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', CENTRE);
-    line.setAttribute('y1', CREASE_Y);
-    line.setAttribute('x2', x);
-    line.setAttribute('y2', y);
-    line.setAttribute('class', 'shot-line');
-    line.setAttribute('stroke', RUN_COLOUR[event.runs] || 'var(--run-dot)');
-    shotsGroup.appendChild(line);
+    if (showLines) {
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', CENTRE);
+      line.setAttribute('y1', CREASE_Y);
+      line.setAttribute('x2', x);
+      line.setAttribute('y2', y);
+      line.setAttribute('class', 'shot-line');
+      line.setAttribute('stroke', RUN_COLOUR[event.runs] || 'var(--run-dot)');
+      shotsGroup.appendChild(line);
+    }
 
     const marker = document.createElementNS(SVG_NS, 'circle');
     marker.setAttribute('cx', x);

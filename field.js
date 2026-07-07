@@ -17,6 +17,15 @@ export const VIEWBOX_SIZE = 600;
 export const CENTRE = VIEWBOX_SIZE / 2;
 export const BOUNDARY_RADIUS = 270;
 
+// The pitch is drawn symmetrically around the ground's true centre, as
+// on a real ground, with the striker standing at one end of it rather
+// than at the exact middle. CREASE_Y is that end: the origin every
+// shot's angle and distance is actually measured from. The boundary
+// and thirty yard circles are still drawn around CENTRE; only the
+// pitch, the crease marker, and every polar conversion use CREASE_Y.
+const PITCH_LENGTH = 90;
+export const CREASE_Y = CENTRE + PITCH_LENGTH / 2;
+
 // Canonical angles for the side labels, before handedness mirroring.
 // 90 and 270 put them either side of the pitch for a right handed
 // batter, matching the same convention used for shot markers.
@@ -77,15 +86,15 @@ export function renderField(container) {
 
   const pitch = document.createElementNS(SVG_NS, 'rect');
   pitch.setAttribute('x', CENTRE - 14);
-  pitch.setAttribute('y', CENTRE - 90);
+  pitch.setAttribute('y', CREASE_Y - PITCH_LENGTH);
   pitch.setAttribute('width', 28);
-  pitch.setAttribute('height', 90);
+  pitch.setAttribute('height', PITCH_LENGTH);
   pitch.setAttribute('class', 'field-pitch');
   fieldGroup.appendChild(pitch);
 
   const crease = document.createElementNS(SVG_NS, 'circle');
   crease.setAttribute('cx', CENTRE);
-  crease.setAttribute('cy', CENTRE);
+  crease.setAttribute('cy', CREASE_Y);
   crease.setAttribute('r', 6);
   crease.setAttribute('class', 'field-crease-marker');
   fieldGroup.appendChild(crease);
@@ -152,8 +161,8 @@ export function updateSideLabels(fieldGroup, labelsGroup, handedness) {
   const offAngle = (displayAngleForHandedness(OFF_SIDE_CANONICAL_ANGLE, handedness) + orientation) % 360;
   const legAngle = (displayAngleForHandedness(LEG_SIDE_CANONICAL_ANGLE, handedness) + orientation) % 360;
 
-  const offPoint = polarToPoint(offAngle, 92, CENTRE, CENTRE, BOUNDARY_RADIUS);
-  const legPoint = polarToPoint(legAngle, 92, CENTRE, CENTRE, BOUNDARY_RADIUS);
+  const offPoint = polarToPoint(offAngle, 92, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
+  const legPoint = polarToPoint(legAngle, 92, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
 
   offLabel.setAttribute('x', offPoint.x);
   offLabel.setAttribute('y', offPoint.y);
@@ -179,7 +188,7 @@ export function onFieldTap(svg, fieldGroup, handler) {
     point.y = event.clientY;
     const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
 
-    const raw = tapToPolar(svgPoint.x, svgPoint.y, CENTRE, CENTRE, BOUNDARY_RADIUS);
+    const raw = tapToPolar(svgPoint.x, svgPoint.y, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
     const orientation = getOrientation(fieldGroup);
     // The field is visually rotated by `orientation` degrees, so a tap
     // at a given screen position corresponds to a canonical angle that

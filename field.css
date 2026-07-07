@@ -52,6 +52,11 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
+.shot-line {
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
 .field-side-label {
   fill: rgba(242, 239, 228, 0.5);
   font-family: var(--font-body);

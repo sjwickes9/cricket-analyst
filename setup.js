@@ -3,7 +3,7 @@
 // bowler) and the shorter "start next innings" version reused after a
 // declaration or all out. Pure DOM building; match.js does the saving.
 
-import { createMatch, startInnings, addPlayersToMatch } from './match.js';
+import { createMatch, startInnings, addPlayersToMatch, getBowlerCandidates } from './match.js';
 
 function playerRow(onRemove) {
   const row = document.createElement('div');
@@ -142,7 +142,9 @@ export function renderOpenersSetup(container, match, onComplete, bannerText, eli
   const playerOptions = players.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
   const bowlerOptions =
     '<option value="">Unknown / not tracked</option>' +
-    match.bowlers.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
+    getBowlerCandidates(match)
+      .map((b) => `<option value="${b.id}">${b.name}</option>`)
+      .join('');
 
   wrap.innerHTML = `
     ${bannerText ? `<p class="setup-banner">${bannerText}</p>` : ''}

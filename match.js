@@ -81,7 +81,16 @@ export function getPlayerById(match, playerId) {
 }
 
 export function getBowlerById(match, bowlerId) {
-  return match.bowlers.find((b) => b.id === bowlerId);
+  return match.bowlers.find((b) => b.id === bowlerId) || match.players.find((p) => p.id === bowlerId);
+}
+
+// In grassroots cricket the scorer usually knows every one of their
+// own players (who batted first) but very few of the opposition, so
+// once the sides swap, the new bowlers are almost always names already
+// entered as batters. Anywhere a bowler is picked or set, offer both
+// the dedicated bowlers list and every player ever entered as a batter.
+export function getBowlerCandidates(match) {
+  return [...match.bowlers.map((b) => ({ id: b.id, name: b.name })), ...match.players.map((p) => ({ id: p.id, name: p.name }))];
 }
 
 // Mid-innings additions: amateur teams often do not know their full XI

@@ -11,7 +11,7 @@
 // batter on strike. Mirroring the marker as well would double up with
 // the labels moving and land the dot under the wrong label.
 
-import { CENTRE, BOUNDARY_RADIUS } from './field.js';
+import { CENTRE, CREASE_Y, BOUNDARY_RADIUS } from './field.js';
 import { polarToPoint } from './utils.js';
 import { currentEvents } from './innings.js';
 
@@ -37,7 +37,16 @@ export function renderWagonWheel(shotsGroup, events) {
     // genuine tap at the exact centre.
     if (event.angle === 0 && event.distance === 0) continue;
 
-    const { x, y } = polarToPoint(event.angle, event.distance, CENTRE, CENTRE, BOUNDARY_RADIUS);
+    const { x, y } = polarToPoint(event.angle, event.distance, CENTRE, CREASE_Y, BOUNDARY_RADIUS);
+
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.setAttribute('x1', CENTRE);
+    line.setAttribute('y1', CREASE_Y);
+    line.setAttribute('x2', x);
+    line.setAttribute('y2', y);
+    line.setAttribute('class', 'shot-line');
+    line.setAttribute('stroke', RUN_COLOUR[event.runs] || 'var(--run-dot)');
+    shotsGroup.appendChild(line);
 
     const marker = document.createElementNS(SVG_NS, 'circle');
     marker.setAttribute('cx', x);

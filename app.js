@@ -21,6 +21,7 @@ import {
   appendToBattingOrder,
   clearActiveMatchId,
   abandonMatch,
+  getBowlerCandidates,
 } from './match.js';
 import { renderNewMatchSetup, renderNextInningsSetup, renderNextInningsChoice, renderOtherTeamRosterSetup } from './setup.js';
 import { renderInningsSummary } from './summary.js';
@@ -30,7 +31,7 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607062015';
+const APP_VERSION = 'v0.2607062230';
 
 let match = null;
 let innings = null;
@@ -215,9 +216,9 @@ function handleDeclare() {
 
 function handleBowler() {
   openBowlerSheet({
-    bowlers: match.bowlers,
+    bowlers: getBowlerCandidates(match),
     onSelectExisting: async (bowlerId) => {
-      const bowler = bowlerId ? match.bowlers.find((b) => b.id === bowlerId) : null;
+      const bowler = bowlerId ? getBowlerById(match, bowlerId) : null;
       innings = await setCurrentBowler(innings, bowlerId);
       await refresh();
       showToast(bowler ? `${bowler.name} is now bowling` : 'Bowler set to unknown');

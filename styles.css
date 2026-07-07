@@ -1,0 +1,104 @@
+/* styles.css
+   Base resets and design tokens.
+
+   Design direction: a cricket pavilion honours board rather than a
+   generic dark-mode app. Deep racing green, a brass accent for the
+   things that matter (the score, primary actions), Fraunces for
+   numerals and headings, Inter for everything read at speed while
+   scoring. Colours are named as CSS variables so field.css and
+   wagonwheel.js can reference them without duplication. */
+
+:root {
+  --field-green: #2b5c3a;
+  --field-green-dark: #1c4128;
+  --field-green-light: #3c7048;
+  --pitch-tan: #cdb87e;
+  --chalk: #f2efe4;
+  --ink: #0f1d16;
+  --ink-raised: #16281f;
+  --scoreboard-bg: #0f1d16;
+  --scoreboard-text: #f2efe4;
+
+  --brass: #c9a24d;
+  --brass-dim: #8d763f;
+  --wicket-red: #b8493a;
+
+  --run-dot: rgba(242, 239, 228, 0.55);
+  --run-single: #d9b559;
+  --run-four: #5b9bd0;
+  --run-six: #b8493a;
+
+  --font-display: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  --touch-target-min: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--ink);
+  color: var(--chalk);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  background: var(--chalk);
+  border-bottom: 2px solid var(--brass);
+}
+
+.app-brand-logo {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+.app-version {
+  flex: 0 0 auto;
+  padding: 3px 0;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  color: rgba(242, 239, 228, 0.35);
+  background: var(--ink);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.08s ease, background-color 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px 0;
+}

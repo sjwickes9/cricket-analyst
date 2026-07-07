@@ -186,11 +186,10 @@
 
 .keeper-dot-button {
   position: absolute;
-  left: 50%;
-  top: 60%;
-  transform: translate(-50%, -50%);
-  min-width: 108px;
-  min-height: 44px;
+  left: calc(50% - 65px);
+  top: calc(60% - 22px);
+  width: 130px;
+  height: 44px;
   padding: 0 16px;
   border-radius: 999px;
   background: rgba(15, 29, 22, 0.88);

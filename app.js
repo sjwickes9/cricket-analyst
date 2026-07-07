@@ -31,7 +31,7 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607071015';
+const APP_VERSION = 'v0.2607071130';
 
 let match = null;
 let innings = null;
@@ -429,3 +429,19 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// Defensive measure for a reported bug where the floating keeper
+// button stopped responding to taps after the tab was backgrounded and
+// re-foregrounded, with no error and no fix from reloading. The likely
+// cause was a stale compositor hit-test region on an absolutely
+// positioned, transformed element, a known category of Chrome bug.
+// Forcing a reflow when the tab becomes visible again is a standard,
+// low-risk workaround for that class of issue.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const keeperButton = document.getElementById('keeper-dot-button');
+  if (keeperButton) {
+    // Reading offsetHeight forces the browser to recompute layout.
+    void keeperButton.offsetHeight;
+  }
+});

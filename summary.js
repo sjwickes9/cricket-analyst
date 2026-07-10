@@ -2,9 +2,12 @@
 // The end of innings summary, laid out like a real cricket scorecard:
 // each batter's name and dismissal on one line with aligned runs and
 // balls columns, then extras and the innings total below. Tapping a
-// batter shows their wagon wheel; batters can also be selected (tap the
-// tick) for a per-batter PDF analysis export. Reuses field.js and
-// wagonwheel.js exactly as the live scoring screen does.
+// batter shows their wagon wheel.
+//
+// Per-batter export uses a deliberate two-step mode rather than showing
+// checkboxes all the time: the scorecard stays clean until the scorer
+// presses "Export selected batters", which reveals the tick boxes and
+// turns the button into "Export now", with a Cancel to back out.
 
 import { renderField, updateSideLabels } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
@@ -41,14 +44,15 @@ export function renderInningsSummary(container, match, innings, events, batterSt
 
   const totals = computeInningsTotals(innings, events);
   const selected = new Set();
+  let selectMode = false;
 
   const wrap = document.createElement('div');
   wrap.className = 'setup-screen';
   wrap.innerHTML = `
     <h1 class="setup-title">${match.teamName}</h1>
-    <p class="setup-hint">Innings ${innings.inningsNumber}${match.opposition ? ` v ${match.opposition}` : ''}. Tap a name for the wagon wheel, or tick batters to export.</p>
+    <p class="setup-hint">Innings ${innings.inningsNumber}${match.opposition ? ` v ${match.opposition}` : ''}. Tap a name for the wagon wheel.</p>
 
-    <div class="scorecard">
+    <div class="scorecard" id="scorecard">
       <div class="scorecard-head">
         <span class="sc-col-select"></span>
         <span class="sc-col-batter">Batter</span>
@@ -58,11 +62,13 @@ export function renderInningsSummary(container, match, innings, events, batterSt
       </div>
       <div id="scorecard-rows"></div>
       <div class="scorecard-extras">
+        <span class="sc-col-select"></span>
         <span class="sc-col-batter">Extras</span>
         <span class="sc-extras-detail">(b ${totals.extras.bye}, lb ${totals.extras.legbye}, w ${totals.extras.wide}, nb ${totals.extras.noball})</span>
         <span class="sc-col-runs">${totals.extrasTotal}</span>
       </div>
       <div class="scorecard-total">
+        <span class="sc-col-select"></span>
         <span class="sc-col-batter">Total</span>
         <span class="sc-total-detail">${totals.overs} overs</span>
         <span class="sc-col-runs">${totals.total}-${totals.wickets}</span>
@@ -71,7 +77,10 @@ export function renderInningsSummary(container, match, innings, events, batterSt
 
     <div id="batter-detail" class="batter-detail"></div>
 
-    <button type="button" id="export-selected-button" class="setup-secondary-button" disabled>Export selected batters (PDF)</button>
+    <div class="summary-select-row">
+      <button type="button" id="export-selected-button" class="setup-secondary-button">Export selected batters (PDF)</button>
+      <button type="button" id="cancel-select-button" class="setup-secondary-button" style="display:none;">Cancel</button>
+    </div>
     <div class="summary-export-row">
       <button type="button" id="export-report-button" class="setup-secondary-button">Full match report (PDF)</button>
       <button type="button" id="export-json-button" class="setup-secondary-button">Back up match (file)</button>
@@ -81,15 +90,35 @@ export function renderInningsSummary(container, match, innings, events, batterSt
   `;
   container.appendChild(wrap);
 
+  const scorecard = wrap.querySelector('#scorecard');
   const rowsContainer = wrap.querySelector('#scorecard-rows');
   const detail = wrap.querySelector('#batter-detail');
-  const exportSelectedButton = wrap.querySelector('#export-selected-button');
+  const exportButton = wrap.querySelector('#export-selected-button');
+  const cancelButton = wrap.querySelector('#cancel-select-button');
+
+  function enterSelectMode() {
+    selectMode = true;
+    scorecard.classList.add('scorecard--selecting');
+    cancelButton.style.display = '';
+    updateExportButton();
+  }
+
+  function exitSelectMode() {
+    selectMode = false;
+    selected.clear();
+    scorecard.classList.remove('scorecard--selecting');
+    scorecard.querySelectorAll('.sc-select--on').forEach((b) => b.classList.remove('sc-select--on'));
+    cancelButton.style.display = 'none';
+    exportButton.disabled = false;
+    exportButton.textContent = 'Export selected batters (PDF)';
+  }
 
   function updateExportButton() {
-    exportSelectedButton.disabled = selected.size === 0;
-    exportSelectedButton.textContent = selected.size
-      ? `Export ${selected.size} batter${selected.size === 1 ? '' : 's'} (PDF)`
-      : 'Export selected batters (PDF)';
+    if (!selectMode) return;
+    exportButton.disabled = selected.size === 0;
+    exportButton.textContent = selected.size
+      ? `Export now (${selected.size})`
+      : 'Export now';
   }
 
   batterStats.forEach((stat) => {
@@ -113,6 +142,7 @@ export function renderInningsSummary(container, match, innings, events, batterSt
 
     const selectButton = row.querySelector('.sc-select');
     selectButton.addEventListener('click', () => {
+      if (!selectMode) return;
       if (selected.has(stat.playerId)) {
         selected.delete(stat.playerId);
         selectButton.classList.remove('sc-select--on');
@@ -142,9 +172,20 @@ export function renderInningsSummary(container, match, innings, events, batterSt
     rowsContainer.appendChild(row);
   });
 
-  exportSelectedButton.addEventListener('click', () => {
-    if (selected.size) onExportSelected(Array.from(selected));
+  // First press reveals the tick boxes; second press (once at least one
+  // batter is ticked) runs the export and leaves select mode.
+  exportButton.addEventListener('click', async () => {
+    if (!selectMode) {
+      enterSelectMode();
+      return;
+    }
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    exitSelectMode();
+    await onExportSelected(ids);
   });
+
+  cancelButton.addEventListener('click', exitSelectMode);
   wrap.querySelector('#export-report-button').addEventListener('click', onExportReport);
   wrap.querySelector('#export-json-button').addEventListener('click', onExportJson);
   wrap.querySelector('#start-next-innings-button').addEventListener('click', onStartNextInnings);

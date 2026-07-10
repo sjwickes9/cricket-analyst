@@ -6,10 +6,11 @@
 import { renderField, onFieldTap, getOrientation, setOrientation, updateSideLabels } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
 import { openBottomSheet, openExtraSheet, openWicketSheet, openConfirmSheet, openAddPersonSheet, openRotateSheet, openBowlerSheet, showToast, maybeShowWalkthrough } from './ui.js';
-import { getEventsForMatch } from './storage.js';
+import { getEventsForMatch, getAllInningsForMatch } from './storage.js';
 import { computeLiveState, computeBatterStats } from './innings.js';
 import {
   getActiveMatchId,
+  setActiveMatchId,
   getMatch,
   getActiveInnings,
   getPlayerById,
@@ -26,12 +27,14 @@ import {
 import { renderNewMatchSetup, renderNextInningsSetup, renderNextInningsChoice, renderOtherTeamRosterSetup } from './setup.js';
 import { renderInningsSummary } from './summary.js';
 import { recordShot, recordWicket, undoLastEvent, editEvent, getLastEvent } from './scoring.js';
+import { exportMatchToFile, importMatchFromFile } from './matchio.js';
+import { generateMatchReport } from './pdf.js';
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607071130';
+const APP_VERSION = 'v0.2607071400';
 
 let match = null;
 let innings = null;
@@ -282,12 +285,7 @@ function handleReturnToStart() {
       document.getElementById('setup-container').style.display = 'block';
       await abandonMatch(matchId);
       const setupTarget = document.getElementById('setup-target');
-      renderNewMatchSetup(setupTarget, (newMatch, newInnings) => {
-        match = newMatch;
-        innings = newInnings;
-        showScoringScreen();
-        maybeShowWalkthrough();
-      });
+      renderNewMatchSetup(setupTarget, onNewMatchStarted, handleImportFile);
     },
   });
 }
@@ -341,6 +339,26 @@ async function showInningsSummary() {
   renderInningsSummary(setupTarget, match, innings, events, batterStats, {
     onStartNextInnings: () => startNextInningsFlow(),
     onFinish: () => showMatchFinished(),
+    onExportPdf: async () => {
+      try {
+        showToast('Building PDF report');
+        const allInnings = await getAllInningsForMatch(match.id);
+        const allEvents = await getEventsForMatch(match.id);
+        await generateMatchReport(match, allInnings, allEvents);
+      } catch (error) {
+        console.error('PDF export failed:', error);
+        showToast(error.message || 'Could not build the PDF');
+      }
+    },
+    onExportJson: async () => {
+      try {
+        const filename = await exportMatchToFile(match.id);
+        showToast(`Saved ${filename}`);
+      } catch (error) {
+        console.error('Backup failed:', error);
+        showToast('Could not back up the match');
+      }
+    },
   });
 }
 
@@ -357,12 +375,7 @@ function showMatchFinished() {
   setupTarget.querySelector('#new-match-button').addEventListener('click', () => {
     match = null;
     innings = null;
-    renderNewMatchSetup(setupTarget, (newMatch, newInnings) => {
-      match = newMatch;
-      innings = newInnings;
-      showScoringScreen();
-      maybeShowWalkthrough();
-    });
+    renderNewMatchSetup(setupTarget, onNewMatchStarted, handleImportFile);
   });
 }
 
@@ -382,6 +395,35 @@ function startNextInningsFlow() {
     onSameTeam: () => renderNextInningsSetup(setupTarget, match, onInningsReady),
     onOtherTeam: () => renderOtherTeamRosterSetup(setupTarget, match, onInningsReady),
   });
+}
+
+function onNewMatchStarted(newMatch, newInnings) {
+  match = newMatch;
+  innings = newInnings;
+  showScoringScreen();
+  maybeShowWalkthrough();
+}
+
+// Loads a backed up match file, then resumes it: to the summary if the
+// latest innings is already finished, otherwise straight into scoring.
+async function handleImportFile(file) {
+  try {
+    showToast('Loading match');
+    const matchId = await importMatchFromFile(file);
+    setActiveMatchId(matchId);
+    match = await getMatch(matchId);
+    innings = await getActiveInnings(matchId);
+    if (innings && innings.status === 'in-progress') {
+      showScoringScreen();
+    } else if (innings) {
+      showInningsSummary();
+    } else {
+      showToast('That file had no innings to load');
+    }
+  } catch (error) {
+    console.error('Import failed:', error);
+    showToast(error.message || 'Could not load that file');
+  }
 }
 
 async function init() {
@@ -420,12 +462,7 @@ async function init() {
     }
   }
 
-  renderNewMatchSetup(setupTarget, (newMatch, newInnings) => {
-    match = newMatch;
-    innings = newInnings;
-    showScoringScreen();
-    maybeShowWalkthrough();
-  });
+  renderNewMatchSetup(setupTarget, onNewMatchStarted, handleImportFile);
 }
 
 document.addEventListener('DOMContentLoaded', init);

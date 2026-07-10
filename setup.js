@@ -47,13 +47,17 @@ function bowlerRow(onRemove) {
   return { row, nameInput };
 }
 
-export function renderNewMatchSetup(container, onComplete) {
+export function renderNewMatchSetup(container, onComplete, onImportFile) {
   container.innerHTML = '';
 
   const wrap = document.createElement('div');
   wrap.className = 'setup-screen';
   wrap.innerHTML = `
     <h1 class="setup-title">New match</h1>
+    <div class="setup-import-row">
+      <button type="button" id="import-match-button" class="setup-secondary-button">Load a backed up match</button>
+      <input type="file" id="import-file-input" accept="application/json,.json" style="display:none;" />
+    </div>
     <label class="setup-label">Your team
       <input type="text" id="team-name-input" class="setup-text-input" placeholder="e.g. Under 15s" />
     </label>
@@ -74,6 +78,16 @@ export function renderNewMatchSetup(container, onComplete) {
     <p id="setup-error" class="setup-error"></p>
   `;
   container.appendChild(wrap);
+
+  if (onImportFile) {
+    const fileInput = wrap.querySelector('#import-file-input');
+    wrap.querySelector('#import-match-button').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) onImportFile(fileInput.files[0]);
+    });
+  } else {
+    wrap.querySelector('.setup-import-row').style.display = 'none';
+  }
 
   const playersList = wrap.querySelector('#players-list');
   const bowlersList = wrap.querySelector('#bowlers-list');

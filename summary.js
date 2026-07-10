@@ -33,7 +33,7 @@ function formatDismissal(stat, match) {
   }
 }
 
-export function renderInningsSummary(container, match, innings, events, batterStats, { onStartNextInnings, onFinish }) {
+export function renderInningsSummary(container, match, innings, events, batterStats, { onStartNextInnings, onFinish, onExportPdf, onExportJson }) {
   container.innerHTML = '';
 
   const totalRuns = batterStats.reduce((sum, s) => sum + s.runs, 0);
@@ -46,6 +46,10 @@ export function renderInningsSummary(container, match, innings, events, batterSt
     <p class="setup-hint">${match.teamName}: ${totalRuns}-${wickets}</p>
     <div id="batting-list" class="batting-list"></div>
     <div id="batter-detail" class="batter-detail"></div>
+    <div class="summary-export-row">
+      <button type="button" id="export-pdf-button" class="setup-secondary-button">Export PDF report</button>
+      <button type="button" id="export-json-button" class="setup-secondary-button">Back up match (file)</button>
+    </div>
     <button type="button" id="start-next-innings-button" class="setup-primary-button">Start next innings</button>
     <button type="button" id="finish-match-button" class="setup-secondary-button">Finish match here</button>
   `;
@@ -86,6 +90,8 @@ export function renderInningsSummary(container, match, innings, events, batterSt
     list.appendChild(row);
   });
 
+  wrap.querySelector('#export-pdf-button').addEventListener('click', onExportPdf);
+  wrap.querySelector('#export-json-button').addEventListener('click', onExportJson);
   wrap.querySelector('#start-next-innings-button').addEventListener('click', onStartNextInnings);
   wrap.querySelector('#finish-match-button').addEventListener('click', onFinish);
 }

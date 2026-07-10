@@ -69,6 +69,14 @@ export async function addEvent(event) {
   return event;
 }
 
+// Like addEvent but overwrites if the id already exists. Used by match
+// import, where re-importing a file should restore it cleanly rather
+// than fail on events that are already present.
+export async function putEvent(event) {
+  await runTransaction(EVENTS_STORE, 'readwrite', (store) => store.put(event));
+  return event;
+}
+
 export async function deleteEvent(eventId) {
   await runTransaction(EVENTS_STORE, 'readwrite', (store) => store.delete(eventId));
 }

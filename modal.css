@@ -401,3 +401,16 @@
   height: auto;
   aspect-ratio: 1 / 1;
 }
+
+.summary-export-row,
+.setup-import-row {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.summary-export-row .setup-secondary-button,
+.setup-import-row .setup-secondary-button {
+  flex: 1;
+  margin-bottom: 0;
+}

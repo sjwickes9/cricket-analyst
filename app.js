@@ -28,13 +28,13 @@ import { renderNewMatchSetup, renderNextInningsSetup, renderNextInningsChoice, r
 import { renderInningsSummary } from './summary.js';
 import { recordShot, recordWicket, undoLastEvent, editEvent, getLastEvent } from './scoring.js';
 import { exportMatchToFile, importMatchFromFile } from './matchio.js';
-import { generateMatchReport } from './pdf.js';
+import { generateMatchReport, generateBatterReport } from './pdf.js';
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607071400';
+const APP_VERSION = 'v0.2607071600';
 
 let match = null;
 let innings = null;
@@ -339,14 +339,23 @@ async function showInningsSummary() {
   renderInningsSummary(setupTarget, match, innings, events, batterStats, {
     onStartNextInnings: () => startNextInningsFlow(),
     onFinish: () => showMatchFinished(),
-    onExportPdf: async () => {
+    onExportReport: async () => {
       try {
-        showToast('Building PDF report');
+        showToast('Building match report');
         const allInnings = await getAllInningsForMatch(match.id);
         const allEvents = await getEventsForMatch(match.id);
         await generateMatchReport(match, allInnings, allEvents);
       } catch (error) {
         console.error('PDF export failed:', error);
+        showToast(error.message || 'Could not build the PDF');
+      }
+    },
+    onExportSelected: async (playerIds) => {
+      try {
+        showToast('Building batter analysis');
+        await generateBatterReport(match, innings, events, playerIds);
+      } catch (error) {
+        console.error('Batter PDF export failed:', error);
         showToast(error.message || 'Could not build the PDF');
       }
     },

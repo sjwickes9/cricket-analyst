@@ -90,16 +90,27 @@ export function computeLiveState(innings, events) {
   };
 }
 
-// Per-batter runs, balls faced and dismissal, for the end of innings
-// summary. Runs off the bat only (byes, leg byes and wides are not
-// credited to the batter); balls faced excludes wides since those are
-// not legitimately faced, but includes no balls, byes and leg byes.
+// Per-batter runs, balls faced, scoring breakdown and dismissal, for
+// the end of innings summary and the per-batter analysis export. Runs
+// off the bat only (byes, leg byes and wides are not credited to the
+// batter); balls faced excludes wides since those are not legitimately
+// faced, but includes no balls, byes and leg byes. The breakdown counts
+// how many deliveries the batter scored each value from (dots, 1s, 2s,
+// 3s, 4s, 6s), which is what the single-batter analysis page shows.
 export function computeBatterStats(innings, events) {
   const stats = new Map();
 
   function statsFor(playerId) {
     if (!stats.has(playerId)) {
-      stats.set(playerId, { playerId, runs: 0, ballsFaced: 0, out: false, dismissalType: null, dismissalBowlerId: null });
+      stats.set(playerId, {
+        playerId,
+        runs: 0,
+        ballsFaced: 0,
+        out: false,
+        dismissalType: null,
+        dismissalBowlerId: null,
+        breakdown: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 6: 0 },
+      });
     }
     return stats.get(playerId);
   }
@@ -114,6 +125,12 @@ export function computeBatterStats(innings, events) {
     }
     if (!event.extraType || event.extraType === 'noball') {
       striker.runs += event.runs;
+      // Only count deliveries the batter actually faced off the bat
+      // towards the scoring breakdown; a wide is not faced, and byes or
+      // leg byes are not runs off the bat.
+      if (event.extraType !== 'wide' && Object.prototype.hasOwnProperty.call(striker.breakdown, event.runs)) {
+        striker.breakdown[event.runs] += 1;
+      }
     }
 
     if (event.wicket && event.dismissedBatterId) {
@@ -126,4 +143,34 @@ export function computeBatterStats(innings, events) {
   }
 
   return innings.battingOrder.filter((id) => stats.has(id)).map((id) => stats.get(id));
+}
+
+// Extras and the innings total, computed from the event log. The total
+// deliberately includes extras not credited to any batter (wides,
+// byes), so, as on a real scorecard, it will not simply equal the sum
+// of the batting column.
+export function computeInningsTotals(innings, events) {
+  const extras = { wide: 0, noball: 0, bye: 0, legbye: 0 };
+  let total = 0;
+  let legalBalls = 0;
+  let wickets = 0;
+
+  for (const event of currentEvents(events)) {
+    total += event.runs + event.extraRuns;
+    if (event.extraType && Object.prototype.hasOwnProperty.call(extras, event.extraType)) {
+      extras[event.extraType] += event.extraRuns;
+    }
+    if (event.legalDelivery) legalBalls += 1;
+    if (event.wicket) wickets += 1;
+  }
+
+  const extrasTotal = extras.wide + extras.noball + extras.bye + extras.legbye;
+  const overs = `${Math.floor(legalBalls / 6)}.${legalBalls % 6}`;
+
+  return { extras, extrasTotal, total, wickets, legalBalls, overs };
+}
+
+export function strikeRate(runs, ballsFaced) {
+  if (!ballsFaced) return '0.0';
+  return ((runs / ballsFaced) * 100).toFixed(1);
 }

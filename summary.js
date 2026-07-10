@@ -1,15 +1,17 @@
 // summary.js
-// The end of innings summary: a batting list for the innings just
-// completed, where tapping a batter shows their individual wagon wheel.
-// This is the first statistics view in the app and reuses field.js and
-// wagonwheel.js exactly as the live scoring screen does, just scoped to
-// one batter's deliveries.
+// The end of innings summary, laid out like a real cricket scorecard:
+// each batter's name and dismissal on one line with aligned runs and
+// balls columns, then extras and the innings total below. Tapping a
+// batter shows their wagon wheel; batters can also be selected (tap the
+// tick) for a per-batter PDF analysis export. Reuses field.js and
+// wagonwheel.js exactly as the live scoring screen does.
 
 import { renderField, updateSideLabels } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
 import { getPlayerById, getBowlerById } from './match.js';
+import { computeInningsTotals } from './innings.js';
 
-function formatDismissal(stat, match) {
+export function formatDismissal(stat, match) {
   if (!stat.out) return 'not out';
 
   const bowler = stat.dismissalBowlerId ? getBowlerById(match, stat.dismissalBowlerId) : null;
@@ -33,21 +35,45 @@ function formatDismissal(stat, match) {
   }
 }
 
-export function renderInningsSummary(container, match, innings, events, batterStats, { onStartNextInnings, onFinish, onExportPdf, onExportJson }) {
+export function renderInningsSummary(container, match, innings, events, batterStats, callbacks) {
+  const { onStartNextInnings, onFinish, onExportJson, onExportSelected, onExportReport } = callbacks;
   container.innerHTML = '';
 
-  const totalRuns = batterStats.reduce((sum, s) => sum + s.runs, 0);
-  const wickets = batterStats.filter((s) => s.out).length;
+  const totals = computeInningsTotals(innings, events);
+  const selected = new Set();
 
   const wrap = document.createElement('div');
   wrap.className = 'setup-screen';
   wrap.innerHTML = `
-    <h1 class="setup-title">Innings complete</h1>
-    <p class="setup-hint">${match.teamName}: ${totalRuns}-${wickets}</p>
-    <div id="batting-list" class="batting-list"></div>
+    <h1 class="setup-title">${match.teamName}</h1>
+    <p class="setup-hint">Innings ${innings.inningsNumber}${match.opposition ? ` v ${match.opposition}` : ''}. Tap a name for the wagon wheel, or tick batters to export.</p>
+
+    <div class="scorecard">
+      <div class="scorecard-head">
+        <span class="sc-col-select"></span>
+        <span class="sc-col-batter">Batter</span>
+        <span class="sc-col-runs">R</span>
+        <span class="sc-col-balls">B</span>
+        <span class="sc-col-sr">SR</span>
+      </div>
+      <div id="scorecard-rows"></div>
+      <div class="scorecard-extras">
+        <span class="sc-col-batter">Extras</span>
+        <span class="sc-extras-detail">(b ${totals.extras.bye}, lb ${totals.extras.legbye}, w ${totals.extras.wide}, nb ${totals.extras.noball})</span>
+        <span class="sc-col-runs">${totals.extrasTotal}</span>
+      </div>
+      <div class="scorecard-total">
+        <span class="sc-col-batter">Total</span>
+        <span class="sc-total-detail">${totals.overs} overs</span>
+        <span class="sc-col-runs">${totals.total}-${totals.wickets}</span>
+      </div>
+    </div>
+
     <div id="batter-detail" class="batter-detail"></div>
+
+    <button type="button" id="export-selected-button" class="setup-secondary-button" disabled>Export selected batters (PDF)</button>
     <div class="summary-export-row">
-      <button type="button" id="export-pdf-button" class="setup-secondary-button">Export PDF report</button>
+      <button type="button" id="export-report-button" class="setup-secondary-button">Full match report (PDF)</button>
       <button type="button" id="export-json-button" class="setup-secondary-button">Back up match (file)</button>
     </div>
     <button type="button" id="start-next-innings-button" class="setup-primary-button">Start next innings</button>
@@ -55,23 +81,49 @@ export function renderInningsSummary(container, match, innings, events, batterSt
   `;
   container.appendChild(wrap);
 
-  const list = wrap.querySelector('#batting-list');
+  const rowsContainer = wrap.querySelector('#scorecard-rows');
   const detail = wrap.querySelector('#batter-detail');
+  const exportSelectedButton = wrap.querySelector('#export-selected-button');
+
+  function updateExportButton() {
+    exportSelectedButton.disabled = selected.size === 0;
+    exportSelectedButton.textContent = selected.size
+      ? `Export ${selected.size} batter${selected.size === 1 ? '' : 's'} (PDF)`
+      : 'Export selected batters (PDF)';
+  }
 
   batterStats.forEach((stat) => {
     const player = getPlayerById(match, stat.playerId);
     if (!player) return;
 
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'batting-row';
+    const row = document.createElement('div');
+    row.className = 'scorecard-row';
     row.innerHTML = `
-      <span class="batting-row-name">${player.name}</span>
-      <span class="batting-row-runs">${stat.runs} (${stat.ballsFaced})</span>
-      <span class="batting-row-dismissal">${formatDismissal(stat, match)}</span>
+      <button type="button" class="sc-select" aria-label="Select ${player.name} for export">
+        <span class="sc-tick"></span>
+      </button>
+      <button type="button" class="sc-batter-info">
+        <span class="sc-batter-name">${player.name}</span>
+        <span class="sc-batter-dismissal">${formatDismissal(stat, match)}</span>
+      </button>
+      <span class="sc-col-runs">${stat.runs}</span>
+      <span class="sc-col-balls">${stat.ballsFaced}</span>
+      <span class="sc-col-sr">${stat.ballsFaced ? ((stat.runs / stat.ballsFaced) * 100).toFixed(0) : '-'}</span>
     `;
 
-    row.addEventListener('click', () => {
+    const selectButton = row.querySelector('.sc-select');
+    selectButton.addEventListener('click', () => {
+      if (selected.has(stat.playerId)) {
+        selected.delete(stat.playerId);
+        selectButton.classList.remove('sc-select--on');
+      } else {
+        selected.add(stat.playerId);
+        selectButton.classList.add('sc-select--on');
+      }
+      updateExportButton();
+    });
+
+    row.querySelector('.sc-batter-info').addEventListener('click', () => {
       detail.innerHTML = '';
       const heading = document.createElement('h2');
       heading.textContent = `${player.name}'s wagon wheel`;
@@ -87,10 +139,13 @@ export function renderInningsSummary(container, match, innings, events, batterSt
       updateSideLabels(fieldGroup, labelsGroup, player.handedness);
     });
 
-    list.appendChild(row);
+    rowsContainer.appendChild(row);
   });
 
-  wrap.querySelector('#export-pdf-button').addEventListener('click', onExportPdf);
+  exportSelectedButton.addEventListener('click', () => {
+    if (selected.size) onExportSelected(Array.from(selected));
+  });
+  wrap.querySelector('#export-report-button').addEventListener('click', onExportReport);
   wrap.querySelector('#export-json-button').addEventListener('click', onExportJson);
   wrap.querySelector('#start-next-innings-button').addEventListener('click', onStartNextInnings);
   wrap.querySelector('#finish-match-button').addEventListener('click', onFinish);

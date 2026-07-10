@@ -62,16 +62,14 @@ export function renderInningsSummary(container, match, innings, events, batterSt
       </div>
       <div id="scorecard-rows"></div>
       <div class="scorecard-extras">
-        <span class="sc-col-select"></span>
-        <span class="sc-col-batter">Extras</span>
-        <span class="sc-extras-detail">(b ${totals.extras.bye}, lb ${totals.extras.legbye}, w ${totals.extras.wide}, nb ${totals.extras.noball})</span>
-        <span class="sc-col-runs">${totals.extrasTotal}</span>
+        <span class="sc-foot-label">Extras</span>
+        <span class="sc-foot-detail">b ${totals.extras.bye}, lb ${totals.extras.legbye}, w ${totals.extras.wide}, nb ${totals.extras.noball}</span>
+        <span class="sc-foot-value">${totals.extrasTotal}</span>
       </div>
       <div class="scorecard-total">
-        <span class="sc-col-select"></span>
-        <span class="sc-col-batter">Total</span>
-        <span class="sc-total-detail">${totals.overs} overs</span>
-        <span class="sc-col-runs">${totals.total}-${totals.wickets}</span>
+        <span class="sc-foot-label">Total</span>
+        <span class="sc-foot-detail">${totals.overs} overs</span>
+        <span class="sc-foot-value">${totals.total}-${totals.wickets}</span>
       </div>
     </div>
 

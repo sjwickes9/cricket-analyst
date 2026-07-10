@@ -383,9 +383,7 @@
 }
 
 .scorecard-head,
-.scorecard-row,
-.scorecard-extras,
-.scorecard-total {
+.scorecard-row {
   display: grid;
   grid-template-columns: 0px 1fr 36px 36px 44px;
   align-items: center;
@@ -395,9 +393,7 @@
 }
 
 .scorecard--selecting .scorecard-head,
-.scorecard--selecting .scorecard-row,
-.scorecard--selecting .scorecard-extras,
-.scorecard--selecting .scorecard-total {
+.scorecard--selecting .scorecard-row {
   grid-template-columns: 32px 1fr 36px 36px 44px;
 }
 
@@ -461,8 +457,10 @@
 
 .sc-batter-info {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
   text-align: left;
   background: transparent;
   color: var(--chalk);
@@ -476,7 +474,7 @@
 }
 
 .sc-batter-dismissal {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   opacity: 0.55;
 }
 
@@ -495,28 +493,32 @@
 
 .scorecard-extras,
 .scorecard-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
   border-top: 1px solid rgba(242, 239, 228, 0.1);
+}
+
+.sc-foot-label {
+  font-weight: 600;
+}
+
+.sc-foot-detail {
+  flex: 1;
+  font-size: 0.75rem;
+  opacity: 0.55;
+}
+
+.sc-foot-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .scorecard-extras {
   font-size: 0.85rem;
-  opacity: 0.8;
-}
-
-.scorecard-extras .sc-extras-detail {
-  text-align: right;
-}
-
-.scorecard-extras .sc-col-runs {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.sc-extras-detail,
-.sc-total-detail {
-  font-size: 0.75rem;
-  opacity: 0.6;
-  text-align: right;
+  opacity: 0.85;
 }
 
 .scorecard-total {
@@ -524,10 +526,8 @@
   font-weight: 700;
 }
 
-.scorecard-total .sc-col-runs {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 1.05rem;
+.scorecard-total .sc-foot-value {
+  font-size: 1.15rem;
   color: var(--brass);
 }
 

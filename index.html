@@ -11,8 +11,56 @@
   <link rel="stylesheet" href="layout.css" />
   <link rel="stylesheet" href="field.css" />
   <link rel="stylesheet" href="modal.css" />
+  <style>
+    /* Critical splash styles live inline in the head so the splash can
+       paint on the very first frame, before any external stylesheet has
+       loaded. The splash is then hidden by app.js the moment the app is
+       ready, on its own, never waiting on fonts, the PDF library or any
+       other background work. A short minimum on-screen time keeps it
+       from flashing away too fast to read on a quick load. */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f2efe4;
+      transition: opacity 0.4s ease;
+    }
+    #splash.splash--hiding {
+      opacity: 0;
+    }
+    #splash.splash--gone {
+      display: none;
+    }
+    #splash img {
+      width: min(70vw, 340px);
+      height: auto;
+      animation: splash-pop 0.5s ease-out;
+    }
+    @keyframes splash-pop {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
 </head>
 <body>
+  <div id="splash"><img src="logo.png" alt="HOWZT" /></div>
+  <script>
+    window.__splashStart = Date.now();
+    // Absolute fail-safe: if the app module never runs (load error, old
+    // cached file, etc.) this still clears the splash after a few
+    // seconds so the user is never trapped looking at it.
+    setTimeout(function () {
+      var s = document.getElementById('splash');
+      if (s && !s.classList.contains('splash--hiding')) {
+        s.classList.add('splash--hiding');
+        setTimeout(function () { s.classList.add('splash--gone'); }, 450);
+      }
+    }, 4000);
+  </script>
+
   <div class="app-brand"><img src="logo.png" alt="HOWZT" class="app-brand-logo" /></div>
 
   <div id="setup-container" class="setup-container">

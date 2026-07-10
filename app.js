@@ -34,7 +34,7 @@ const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607101545';
+const APP_VERSION = 'v0.2607101615';
 
 let match = null;
 let innings = null;
@@ -474,7 +474,28 @@ async function init() {
   renderNewMatchSetup(setupTarget, onNewMatchStarted, handleImportFile);
 }
 
+// Hides the splash as soon as our own script has parsed and run, held
+// only by a short minimum display time so it does not flash away too
+// fast to read. Crucially this is NOT awaited on anything: not fonts,
+// not IndexedDB, not the lazily-loaded PDF library. Tying the splash to
+// background loading is exactly what made a previous app feel slow to
+// start, so here the splash clears on a fixed, self-contained schedule
+// and the app renders underneath it regardless.
+function dismissSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  const MIN_VISIBLE_MS = 900;
+  const start = window.__splashStart || 0;
+  const elapsed = Date.now() - start;
+  const wait = Math.max(0, MIN_VISIBLE_MS - elapsed);
+  setTimeout(() => {
+    splash.classList.add('splash--hiding');
+    setTimeout(() => splash.classList.add('splash--gone'), 450);
+  }, wait);
+}
+
 document.addEventListener('DOMContentLoaded', init);
+dismissSplash();
 
 // Defensive measure for a reported bug where the floating keeper
 // button stopped responding to taps after the tab was backgrounded and

@@ -13,7 +13,7 @@
 // jsPDF is loaded lazily from a CDN the first time a report is
 // requested, so it never slows down live scoring.
 
-import { computeBatterStats, computeInningsTotals, currentEvents, strikeRate } from './innings.js';
+import { computeBatterStats, computeInningsTotals, currentEvents, strikeRate, computeSectorRuns } from './innings.js';
 import { getPlayerById, getBowlerById } from './match.js';
 import { boundaryDistanceForAngle } from './utils.js';
 
@@ -67,12 +67,24 @@ const CREASE_OFFSET_RATIO = 0.167; // 45 / 270, matches CREASE_OFFSET / BOUNDARY
 
 // Draws one batter's wagon wheel into the PDF at (cx, cy) with the
 // given radius, using the same off-centre-crease geometry as the app.
-function drawWagonWheel(doc, batterEvents, cx, cy, radius) {
+// When sectorData is supplied, the eight sector divisions are drawn and
+// each sector's runs and share of the batter's total are printed just
+// outside the boundary, matching the on-screen summary.
+function drawWagonWheel(doc, batterEvents, cx, cy, radius, sectorData) {
   const creaseY = cy + radius * CREASE_OFFSET_RATIO;
 
   doc.setDrawColor(120, 150, 120);
   doc.setFillColor(235, 240, 232);
   doc.circle(cx, cy, radius, 'FD');
+
+  if (sectorData) {
+    doc.setDrawColor(190, 205, 190);
+    doc.setLineWidth(0.2);
+    for (let angle = 0; angle < 360; angle += 45) {
+      const rad = (angle * Math.PI) / 180;
+      doc.line(cx, creaseY, cx + radius * Math.sin(rad), creaseY - radius * Math.cos(rad));
+    }
+  }
 
   doc.setFillColor(90, 90, 90);
   doc.circle(cx, creaseY, 0.6, 'F');
@@ -93,6 +105,32 @@ function drawWagonWheel(doc, batterEvents, cx, cy, radius) {
     doc.line(cx, creaseY, x, y);
     doc.setFillColor(rgb[0], rgb[1], rgb[2]);
     doc.circle(x, y, event.runs >= 4 ? 1.1 : 0.9, 'F');
+  }
+
+  if (sectorData) {
+    const labelRadius = radius + 9;
+    sectorData.sectors.forEach((sector) => {
+      const midAngle = (sector.from + sector.to) / 2;
+      // Shot markers are drawn at raw physical angles, but sector data
+      // is computed in handedness-corrected space, so for a left hander
+      // the label must be mirrored back to sit over its own shots.
+      const physicalAngle = sectorData.handedness === 'left' ? (360 - midAngle) % 360 : midAngle;
+      const rad = (physicalAngle * Math.PI) / 180;
+      const x = cx + labelRadius * Math.sin(rad);
+      const y = creaseY - labelRadius * Math.cos(rad);
+
+      const faded = sector.runs === 0;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(faded ? 175 : 30, faded ? 175 : 30, faded ? 175 : 30);
+      doc.text(String(sector.runs), x, y, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(faded ? 190 : 140, faded ? 190 : 115, faded ? 190 : 60);
+      doc.text(`${sector.percentage}%`, x, y + 3.5, { align: 'center' });
+    });
+    doc.setTextColor(0, 0, 0);
   }
 }
 
@@ -308,16 +346,17 @@ export async function generateBatterReport(match, innings, events, playerIds) {
     });
     y += 24;
 
-    // Large wagon wheel.
+    // Large wagon wheel with sector run totals.
     const batterEvents = events.filter((e) => e.strikerBatterId === stat.playerId);
-    const radius = 55;
+    const sectorData = computeSectorRuns(batterEvents, player ? player.handedness : 'right');
+    const radius = 50;
     const cx = pageWidth / 2;
-    const cy = y + radius;
-    drawWagonWheel(doc, batterEvents, cx, cy, radius);
+    const cy = y + radius + 6;
+    drawWagonWheel(doc, batterEvents, cx, cy, radius, sectorData);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(110, 110, 110);
-    doc.text('Wagon wheel: lines show each scoring stroke from the crease', cx, cy + radius + 6, { align: 'center' });
+    doc.text('Runs and share of total by sector, shown outside the boundary', cx, cy + radius + 14, { align: 'center' });
     doc.setTextColor(0, 0, 0);
   });
 

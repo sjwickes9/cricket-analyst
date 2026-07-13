@@ -9,10 +9,10 @@
 // presses "Export selected batters", which reveals the tick boxes and
 // turns the button into "Export now", with a Cancel to back out.
 
-import { renderField, updateSideLabels } from './field.js';
+import { renderField, updateSideLabels, renderSectorLabels, renderSectorDividers } from './field.js';
 import { renderWagonWheel } from './wagonwheel.js';
 import { getPlayerById, getBowlerById } from './match.js';
-import { computeInningsTotals } from './innings.js';
+import { computeInningsTotals, computeSectorRuns } from './innings.js';
 
 export function formatDismissal(stat, match) {
   if (!stat.out) return 'not out';
@@ -161,10 +161,14 @@ export function renderInningsSummary(container, match, innings, events, batterSt
       fieldContainer.className = 'summary-field-container';
       detail.appendChild(fieldContainer);
 
-      const { shotsGroup, fieldGroup, labelsGroup } = renderField(fieldContainer);
+      const { shotsGroup, fieldGroup, labelsGroup, sectorGroup } = renderField(fieldContainer);
       const batterEvents = events.filter((e) => e.strikerBatterId === stat.playerId);
       renderWagonWheel(shotsGroup, batterEvents, { showLines: true });
       updateSideLabels(fieldGroup, labelsGroup, player.handedness);
+
+      const sectorData = computeSectorRuns(batterEvents, player.handedness);
+      renderSectorDividers(fieldGroup, true);
+      renderSectorLabels(fieldGroup, sectorGroup, sectorData, player.handedness);
     });
 
     rowsContainer.appendChild(row);

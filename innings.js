@@ -5,6 +5,8 @@
 // never tracked incrementally, so undo and edit cannot leave the
 // scoring screen out of sync with what is actually stored.
 
+import { displayAngleForHandedness } from './utils.js';
+
 // Only current (non-superseded) events count towards live state.
 // Sorted by over and ball first, with timestamp as a tiebreaker: wides
 // and no-balls do not advance the ball count, so two events can
@@ -173,4 +175,57 @@ export function computeInningsTotals(innings, events) {
 export function strikeRate(runs, ballsFaced) {
   if (!ballsFaced) return '0.0';
   return ((runs / ballsFaced) * 100).toFixed(1);
+}
+
+// Eight scoring sectors: four either side of the wicket, each 45
+// degrees, running from directly behind the stumps round to straight
+// down the ground.
+//
+// Angles are measured with 0 straight back over the keeper's head and
+// 180 straight down the ground, so 0 to 180 is one side of the wicket
+// and 180 to 360 the other. Sectors are defined against a right handed
+// batter's view (off side 0 to 180); handedness is applied at
+// aggregation time by mirroring the angle first, exactly as the field
+// labels are mirrored at render time. Without that, a left hander's leg
+// side runs would be reported as off side.
+export const SECTORS = [
+  { id: 'off-1', side: 'off', from: 0, to: 45, label: 'Behind square' },
+  { id: 'off-2', side: 'off', from: 45, to: 90, label: 'Square' },
+  { id: 'off-3', side: 'off', from: 90, to: 135, label: 'Forward of square' },
+  { id: 'off-4', side: 'off', from: 135, to: 180, label: 'Straight' },
+  { id: 'leg-4', side: 'leg', from: 180, to: 225, label: 'Straight' },
+  { id: 'leg-3', side: 'leg', from: 225, to: 270, label: 'Forward of square' },
+  { id: 'leg-2', side: 'leg', from: 270, to: 315, label: 'Square' },
+  { id: 'leg-1', side: 'leg', from: 315, to: 360, label: 'Behind square' },
+];
+
+// Aggregates a batter's runs into the eight sectors. Returns each
+// sector with its runs, shot count, and share of that batter's total
+// runs off the bat. Deliveries with no real shot position (keeper dot
+// balls, extras, wickets) are excluded, since they belong to no sector.
+export function computeSectorRuns(events, handedness) {
+  const totals = new Map(SECTORS.map((s) => [s.id, { ...s, runs: 0, shots: 0, percentage: 0 }]));
+  let totalRuns = 0;
+
+  for (const event of currentEvents(events)) {
+    if (event.extraType || event.wicket) continue;
+    if (event.angle === 0 && event.distance === 0) continue;
+
+    const angle = displayAngleForHandedness(event.angle, handedness);
+    const normalised = ((angle % 360) + 360) % 360;
+
+    const sector = SECTORS.find((s) => normalised >= s.from && normalised < s.to);
+    if (!sector) continue;
+
+    const entry = totals.get(sector.id);
+    entry.runs += event.runs;
+    entry.shots += 1;
+    totalRuns += event.runs;
+  }
+
+  for (const entry of totals.values()) {
+    entry.percentage = totalRuns > 0 ? Math.round((entry.runs / totalRuns) * 100) : 0;
+  }
+
+  return { sectors: Array.from(totals.values()), totalRuns, handedness };
 }

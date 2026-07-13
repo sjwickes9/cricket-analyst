@@ -13,7 +13,11 @@
 import { tapToPolar, polarToPoint, displayAngleForHandedness } from './utils.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-export const VIEWBOX_SIZE = 600;
+// The viewBox is larger than the field itself to leave a margin outside
+// the boundary for the sector run labels. CENTRE and BOUNDARY_RADIUS
+// are unchanged, so no stored coordinate or geometry is affected: only
+// the drawable canvas around the field grew.
+export const VIEWBOX_SIZE = 700;
 export const CENTRE = VIEWBOX_SIZE / 2;
 export const BOUNDARY_RADIUS = 270;
 
@@ -38,6 +42,8 @@ let instanceCounter = 0;
 export function renderField(container) {
   instanceCounter += 1;
   const gradientId = `turf-gradient-${instanceCounter}`;
+  const stripeId = `turf-stripes-${instanceCounter}`;
+  const clipId = `turf-clip-${instanceCounter}`;
 
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`);
@@ -45,6 +51,10 @@ export function renderField(container) {
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', 'Cricket field, tap to record where the ball went');
 
+  // Mown stripes, as on a professional outfield: alternating light and
+  // dark bands from the roller running up and down the ground. Drawn as
+  // a pattern and clipped to the boundary, layered over the radial
+  // gradient so the field still has depth rather than looking flat.
   const defs = document.createElementNS(SVG_NS, 'defs');
   defs.innerHTML = `
     <radialGradient id="${gradientId}" cx="50%" cy="42%" r="75%">
@@ -52,6 +62,13 @@ export function renderField(container) {
       <stop offset="60%" stop-color="var(--field-green)" />
       <stop offset="100%" stop-color="var(--field-green-dark)" />
     </radialGradient>
+    <pattern id="${stripeId}" width="44" height="10" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="22" height="10" fill="#ffffff" opacity="0.05" />
+      <rect x="22" y="0" width="22" height="10" fill="#000000" opacity="0.05" />
+    </pattern>
+    <clipPath id="${clipId}">
+      <circle cx="${CENTRE}" cy="${CENTRE}" r="${BOUNDARY_RADIUS}" />
+    </clipPath>
   `;
   svg.appendChild(defs);
 
@@ -70,6 +87,16 @@ export function renderField(container) {
   boundary.setAttribute('class', 'field-boundary');
   boundary.setAttribute('fill', `url(#${gradientId})`);
   fieldGroup.appendChild(boundary);
+
+  const stripes = document.createElementNS(SVG_NS, 'rect');
+  stripes.setAttribute('x', CENTRE - BOUNDARY_RADIUS);
+  stripes.setAttribute('y', CENTRE - BOUNDARY_RADIUS);
+  stripes.setAttribute('width', BOUNDARY_RADIUS * 2);
+  stripes.setAttribute('height', BOUNDARY_RADIUS * 2);
+  stripes.setAttribute('fill', `url(#${stripeId})`);
+  stripes.setAttribute('clip-path', `url(#${clipId})`);
+  stripes.setAttribute('pointer-events', 'none');
+  fieldGroup.appendChild(stripes);
 
   const rope = document.createElementNS(SVG_NS, 'circle');
   rope.setAttribute('cx', CENTRE);
@@ -128,6 +155,14 @@ export function renderField(container) {
   legLabel.textContent = 'LEG SIDE';
   labelsGroup.appendChild(legLabel);
 
+  // Sector run labels sit outside the boundary, in their own group and
+  // outside the rotatable group for the same reason as the side labels:
+  // they must stay upright and readable. Populated only by the summary
+  // view (see renderSectorLabels); empty during live scoring.
+  const sectorGroup = document.createElementNS(SVG_NS, 'g');
+  sectorGroup.setAttribute('class', 'field-sector-labels');
+  svg.appendChild(sectorGroup);
+
   const existingSvg = container.querySelector('svg');
   if (existingSvg) existingSvg.remove();
   container.appendChild(svg);
@@ -147,7 +182,79 @@ export function renderField(container) {
 
   updateSideLabels(fieldGroup, labelsGroup, 'right');
 
-  return { svg, shotsGroup, fieldGroup, labelsGroup };
+  return { svg, shotsGroup, fieldGroup, labelsGroup, sectorGroup };
+}
+
+// Draws the eight sector run totals just outside the boundary, each at
+// the mid-angle of its sector. Like the side labels, these are
+// positioned in display space (mirrored for handedness, offset by the
+// field's rotation) but the text itself is never rotated, so it stays
+// upright however the field is turned. Sectors with no runs are drawn
+// faded rather than omitted, so the eight-sector shape stays legible
+// and an empty sector is itself informative to a coach.
+export function renderSectorLabels(fieldGroup, sectorGroup, sectorData, handedness) {
+  sectorGroup.innerHTML = '';
+  if (!sectorData) return;
+
+  const orientation = getOrientation(fieldGroup);
+  const labelRadius = BOUNDARY_RADIUS + 32;
+
+  sectorData.sectors.forEach((sector) => {
+    const midAngle = (sector.from + sector.to) / 2;
+    // Shot markers render at raw physical angles (they show where the
+    // ball actually went), while sector totals are computed in
+    // handedness-corrected space (so a left hander's leg side runs are
+    // counted as leg side). For a left hander the label must therefore
+    // be mirrored back to the physical angle, or it would sit over the
+    // opposite side's shots.
+    const physicalAngle = handedness === 'left' ? (360 - midAngle) % 360 : midAngle;
+    const screenAngle = (physicalAngle + orientation) % 360;
+    const rad = (screenAngle * Math.PI) / 180;
+
+    const x = CENTRE + labelRadius * Math.sin(rad);
+    const y = CREASE_Y - labelRadius * Math.cos(rad);
+
+    const runsText = document.createElementNS(SVG_NS, 'text');
+    runsText.setAttribute('x', x);
+    runsText.setAttribute('y', y);
+    runsText.setAttribute('text-anchor', 'middle');
+    runsText.setAttribute('class', sector.runs > 0 ? 'sector-runs' : 'sector-runs sector-runs--empty');
+    runsText.textContent = String(sector.runs);
+    sectorGroup.appendChild(runsText);
+
+    const pctText = document.createElementNS(SVG_NS, 'text');
+    pctText.setAttribute('x', x);
+    pctText.setAttribute('y', y + 12);
+    pctText.setAttribute('text-anchor', 'middle');
+    pctText.setAttribute('class', sector.runs > 0 ? 'sector-pct' : 'sector-pct sector-pct--empty');
+    pctText.textContent = `${sector.percentage}%`;
+    sectorGroup.appendChild(pctText);
+  });
+}
+
+// Faint radial lines marking the eight sector divisions, drawn inside
+// the field so the reader can see which shots belong to which total.
+export function renderSectorDividers(fieldGroup, show) {
+  const existing = fieldGroup.querySelector('.field-sector-dividers');
+  if (existing) existing.remove();
+  if (!show) return;
+
+  const group = document.createElementNS(SVG_NS, 'g');
+  group.setAttribute('class', 'field-sector-dividers');
+  group.setAttribute('pointer-events', 'none');
+
+  for (let angle = 0; angle < 360; angle += 45) {
+    const rad = (angle * Math.PI) / 180;
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.setAttribute('x1', CENTRE);
+    line.setAttribute('y1', CREASE_Y);
+    line.setAttribute('x2', CENTRE + BOUNDARY_RADIUS * 1.02 * Math.sin(rad));
+    line.setAttribute('y2', CREASE_Y - BOUNDARY_RADIUS * 1.02 * Math.cos(rad));
+    line.setAttribute('class', 'field-sector-divider');
+    group.appendChild(line);
+  }
+
+  fieldGroup.appendChild(group);
 }
 
 // Positions the off/leg side labels using the same handedness mirror

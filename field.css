@@ -65,3 +65,39 @@
   letter-spacing: 0.14em;
   pointer-events: none;
 }
+
+/* Faint radial lines marking the eight sector divisions, shown only on
+   the summary wagon wheel so the reader can tell which shots belong to
+   which run total. */
+.field-sector-divider {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+/* Sector run totals, drawn outside the boundary. Always upright,
+   never rotated with the field. */
+.field-sector-labels {
+  pointer-events: none;
+}
+
+.sector-runs {
+  fill: var(--chalk);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.sector-pct {
+  fill: var(--brass);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sector-runs--empty,
+.sector-pct--empty {
+  opacity: 0.3;
+}

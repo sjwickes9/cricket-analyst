@@ -32,9 +32,48 @@ import { generateMatchReport, generateBatterReport } from './pdf.js';
 
 const RUN_OPTIONS = [0, 1, 2, 3, 4, 6];
 
+// Theme: dark by default, follows the device automatically, or a manual
+// choice saved in localStorage that overrides the device. The label on
+// the toggle shows the theme you would switch TO, so it reads as an
+// action. The early-apply script in index.html handles the pre-paint
+// case; this keeps the button in sync and handles switching.
+const THEME_KEY = 'howzt-theme';
+
+function effectiveTheme() {
+  const override = document.documentElement.getAttribute('data-theme');
+  if (override === 'light' || override === 'dark') return override;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function updateThemeToggleLabel() {
+  const button = document.getElementById('theme-toggle');
+  if (!button) return;
+  // Show the mode the press will switch to.
+  button.textContent = effectiveTheme() === 'dark' ? 'Light' : 'Dark';
+}
+
+function toggleTheme() {
+  const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch (e) {
+    /* storage unavailable, theme still applies for this session */
+  }
+  updateThemeToggleLabel();
+}
+
+// If the device switches light/dark while the app is open and the user
+// has not made a manual choice, keep the toggle label accurate.
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (!document.documentElement.getAttribute('data-theme')) updateThemeToggleLabel();
+  });
+}
+
 // No build step generates this automatically: bump it by hand (GMT date
 // and time, YYMMDDHHMM) before each deploy while the app is in alpha.
-const APP_VERSION = 'v0.2607101615';
+const APP_VERSION = 'v0.2607101700';
 
 let match = null;
 let innings = null;
@@ -449,6 +488,12 @@ async function init() {
   document.getElementById('rotate-button').addEventListener('click', handleRotate);
   document.getElementById('return-to-start-button').addEventListener('click', handleReturnToStart);
   document.getElementById('app-version').textContent = APP_VERSION;
+
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+    updateThemeToggleLabel();
+  }
 
   const activeMatchId = getActiveMatchId();
   if (activeMatchId) {

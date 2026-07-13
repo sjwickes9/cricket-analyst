@@ -85,8 +85,8 @@
   min-height: var(--touch-target-min);
   padding: 0 14px;
   border-radius: 8px;
-  background: rgba(242, 239, 228, 0.08);
-  border: 1px solid rgba(242, 239, 228, 0.14);
+  background: rgba(var(--surface-rgb), 0.08);
+  border: 1px solid rgba(var(--surface-rgb), 0.14);
   color: var(--scoreboard-text);
   font-size: 0.85rem;
   font-weight: 600;
@@ -103,7 +103,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 7px 14px;
-  background: rgba(242, 239, 228, 0.03);
+  background: rgba(var(--surface-rgb), 0.03);
   color: var(--chalk);
   font-size: 0.85rem;
 }
@@ -128,7 +128,7 @@
   display: flex;
   gap: 8px;
   padding: 7px 14px;
-  background: rgba(242, 239, 228, 0.015);
+  background: rgba(var(--surface-rgb), 0.015);
 }
 
 .roster-bar-button {
@@ -136,7 +136,7 @@
   min-height: 38px;
   border-radius: 7px;
   background: transparent;
-  border: 1px solid rgba(242, 239, 228, 0.14);
+  border: 1px solid rgba(var(--surface-rgb), 0.14);
   color: var(--chalk);
   font-size: 0.75rem;
   font-weight: 600;
@@ -161,8 +161,8 @@
   flex: 1;
   min-height: var(--touch-target-min);
   border-radius: 9px;
-  background: rgba(242, 239, 228, 0.07);
-  border: 1px solid rgba(242, 239, 228, 0.12);
+  background: rgba(var(--surface-rgb), 0.07);
+  border: 1px solid rgba(var(--surface-rgb), 0.12);
   color: var(--chalk);
   font-size: 0.82rem;
   font-weight: 600;
@@ -206,5 +206,5 @@
 
 .keeper-dot-button:active {
   background: var(--brass);
-  color: var(--ink);
+  color: var(--on-brass);
 }

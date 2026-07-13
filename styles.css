@@ -1,14 +1,26 @@
 /* styles.css
    Base resets and design tokens.
 
-   Design direction: a cricket pavilion honours board rather than a
-   generic dark-mode app. Deep racing green, a brass accent for the
-   things that matter (the score, primary actions), Fraunces for
-   numerals and headings, Inter for everything read at speed while
-   scoring. Colours are named as CSS variables so field.css and
-   wagonwheel.js can reference them without duplication. */
+   Design direction: a cricket pavilion honours board. Deep racing
+   green, a brass accent for the things that matter (the score, primary
+   actions), Inter throughout. Colours are named as CSS variables so
+   every module references them without duplication, which is also what
+   makes light and dark mode a matter of swapping this one block rather
+   than touching every component.
 
-:root {
+   Theme model: dark is the default palette. A light palette is applied
+   both automatically (prefers-color-scheme) and manually via a
+   data-theme attribute on <html> that app.js sets from a saved
+   preference. The manual attribute wins over the media query, so an
+   explicit choice always overrides the device setting.
+
+   --surface-rgb is the raw triplet used for all the subtle translucent
+   overlays (borders, faint fills). It flips from light-on-dark to
+   dark-on-light between themes, so the same rgba(var(--surface-rgb), X)
+   opacities read correctly either way. */
+
+:root,
+:root[data-theme='dark'] {
   --field-green: #2b5c3a;
   --field-green-dark: #1c4128;
   --field-green-light: #3c7048;
@@ -22,16 +34,70 @@
   --brass: #c9a24d;
   --brass-dim: #8d763f;
   --wicket-red: #b8493a;
+  --on-brass: #0f1d16;
 
-  --run-dot: rgba(242, 239, 228, 0.55);
+  --run-dot: rgba(var(--surface-rgb), 0.55);
   --run-single: #d9b559;
   --run-four: #5b9bd0;
   --run-six: #b8493a;
+
+  --surface-rgb: 242, 239, 228;
+  --backdrop: rgba(6, 12, 9, 0.7);
+  --shadow-strong: var(--shadow-strong);
 
   --font-display: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-body: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   --touch-target-min: 48px;
+}
+
+/* Light palette: warm off-white paper, dark green ink for text, a
+   slightly deeper brass so the accent keeps enough contrast on a light
+   ground. Applied automatically when the device prefers light and no
+   manual choice has been made. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --chalk: #17251c;
+    --ink: #f4f1e8;
+    --ink-raised: #ffffff;
+    --scoreboard-bg: #17251c;
+    --scoreboard-text: #f4f1e8;
+
+    --brass: #836419;
+    --brass-dim: #8d763f;
+    --on-brass: #ffffff;
+
+    --run-single: #b48a1f;
+    --run-four: #2f72a8;
+    --run-six: #b8493a;
+
+    --surface-rgb: 23, 37, 28;
+    --backdrop: rgba(23, 37, 28, 0.45);
+    --shadow-strong: rgba(23, 37, 28, 0.18);
+  }
+}
+
+/* Manual light override: identical to the media-query palette above,
+   applied whenever app.js sets data-theme="light" regardless of device
+   setting. */
+:root[data-theme='light'] {
+  --chalk: #17251c;
+  --ink: #f4f1e8;
+  --ink-raised: #ffffff;
+  --scoreboard-bg: #17251c;
+  --scoreboard-text: #f4f1e8;
+
+  --brass: #836419;
+  --brass-dim: #8d763f;
+  --on-brass: #ffffff;
+
+  --run-single: #b48a1f;
+  --run-four: #2f72a8;
+  --run-six: #b8493a;
+
+  --surface-rgb: 23, 37, 28;
+  --backdrop: rgba(23, 37, 28, 0.45);
+  --shadow-strong: rgba(23, 37, 28, 0.18);
 }
 
 * {
@@ -56,13 +122,33 @@ body {
 
 .app-brand {
   flex: 0 0 auto;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px 0;
-  background: var(--chalk);
+  /* Fixed light backing in both themes: the logo artwork is navy and
+     would disappear on a dark strip, so this must not follow --chalk,
+     which flips dark in light mode. */
+  background: #f2efe4;
   border-bottom: 3px solid var(--brass);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px var(--shadow-strong);
+}
+
+.theme-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(23, 37, 28, 0.25);
+  background: transparent;
+  color: #17251c;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .app-brand-logo {
@@ -77,7 +163,7 @@ body {
   text-align: center;
   font-size: 0.65rem;
   letter-spacing: 0.04em;
-  color: rgba(242, 239, 228, 0.35);
+  color: rgba(var(--surface-rgb), 0.35);
   background: var(--ink);
 }
 

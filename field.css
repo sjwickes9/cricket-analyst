@@ -29,7 +29,7 @@
 
 .field-inner-circle {
   fill: none;
-  stroke: rgba(242, 239, 228, 0.22);
+  stroke: rgba(var(--surface-rgb), 0.22);
   stroke-width: 1.5;
   stroke-dasharray: 5 7;
 }
@@ -49,7 +49,7 @@
 .shot-marker {
   stroke: var(--ink);
   stroke-width: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 1px 2px var(--shadow-strong));
 }
 
 .shot-line {
@@ -58,7 +58,7 @@
 }
 
 .field-side-label {
-  fill: rgba(242, 239, 228, 0.5);
+  fill: rgba(var(--surface-rgb), 0.5);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;

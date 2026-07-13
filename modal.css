@@ -68,8 +68,8 @@
   margin-top: 6px;
   padding: 0 12px;
   border-radius: 8px;
-  border: 1px solid rgba(242, 239, 228, 0.18);
-  background: rgba(242, 239, 228, 0.05);
+  border: 1px solid rgba(var(--surface-rgb), 0.18);
+  background: rgba(var(--surface-rgb), 0.05);
   color: var(--chalk);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -97,8 +97,8 @@
   min-height: var(--touch-target-min);
   padding: 0 12px;
   border-radius: 8px;
-  border: 1px solid rgba(242, 239, 228, 0.18);
-  background: rgba(242, 239, 228, 0.05);
+  border: 1px solid rgba(var(--surface-rgb), 0.18);
+  background: rgba(var(--surface-rgb), 0.05);
   color: var(--chalk);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -107,8 +107,8 @@
 .roster-handedness-select {
   min-height: var(--touch-target-min);
   border-radius: 8px;
-  border: 1px solid rgba(242, 239, 228, 0.18);
-  background: rgba(242, 239, 228, 0.05);
+  border: 1px solid rgba(var(--surface-rgb), 0.18);
+  background: rgba(var(--surface-rgb), 0.05);
   color: var(--chalk);
   font-size: 0.85rem;
 }
@@ -129,7 +129,7 @@
   padding: 0 18px;
   border-radius: 8px;
   background: transparent;
-  border: 1px solid rgba(242, 239, 228, 0.2);
+  border: 1px solid rgba(var(--surface-rgb), 0.2);
   color: var(--chalk);
   font-size: 0.88rem;
   font-weight: 600;
@@ -142,7 +142,7 @@
   min-height: var(--touch-target-min);
   border-radius: 9px;
   background: var(--brass);
-  color: var(--ink);
+  color: var(--on-brass);
   font-size: 1rem;
   font-weight: 700;
   margin-top: 18px;
@@ -158,7 +158,7 @@
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 12, 9, 0.6);
+  background: var(--backdrop);
   display: flex;
   align-items: flex-end;
   z-index: 100;
@@ -174,7 +174,7 @@
   border-top: 1px solid rgba(201, 162, 77, 0.3);
   padding: 10px 20px 24px;
   animation: slide-up 0.18s ease-out;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -8px 30px var(--shadow-strong);
 }
 
 .bottom-sheet::before {
@@ -183,7 +183,7 @@
   width: 40px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(242, 239, 228, 0.2);
+  background: rgba(var(--surface-rgb), 0.2);
   margin: 6px auto 16px;
 }
 
@@ -206,8 +206,8 @@
 .run-button {
   min-height: 60px;
   border-radius: 12px;
-  background: rgba(242, 239, 228, 0.06);
-  border: 1px solid rgba(242, 239, 228, 0.12);
+  background: rgba(var(--surface-rgb), 0.06);
+  border: 1px solid rgba(var(--surface-rgb), 0.12);
   color: var(--chalk);
   font-family: var(--font-display);
   font-size: 1.3rem;
@@ -258,8 +258,8 @@
   min-height: var(--touch-target-min);
   padding: 0 14px;
   border-radius: 8px;
-  background: rgba(242, 239, 228, 0.05);
-  border: 1px solid rgba(242, 239, 228, 0.1);
+  background: rgba(var(--surface-rgb), 0.05);
+  border: 1px solid rgba(var(--surface-rgb), 0.1);
   color: var(--chalk);
   font-size: 0.95rem;
   margin-bottom: 6px;
@@ -284,7 +284,7 @@
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.2s ease;
   z-index: 200;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px var(--shadow-strong);
 }
 
 .toast-visible {
@@ -295,7 +295,7 @@
 .walkthrough-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 12, 9, 0.75);
+  background: var(--backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,7 +327,7 @@
   min-height: var(--touch-target-min);
   border-radius: 8px;
   background: var(--brass);
-  color: var(--ink);
+  color: var(--on-brass);
   font-size: 1rem;
   font-weight: 700;
   margin-top: 8px;
@@ -377,7 +377,7 @@
 
 .scorecard {
   margin: 16px 0;
-  border: 1px solid rgba(242, 239, 228, 0.1);
+  border: 1px solid rgba(var(--surface-rgb), 0.1);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -413,14 +413,14 @@
 }
 
 .scorecard-row {
-  border-top: 1px solid rgba(242, 239, 228, 0.06);
+  border-top: 1px solid rgba(var(--surface-rgb), 0.06);
 }
 
 .sc-select {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  border: 1.5px solid rgba(242, 239, 228, 0.3);
+  border: 1.5px solid rgba(var(--surface-rgb), 0.3);
   background: transparent;
   display: flex;
   align-items: center;
@@ -445,8 +445,8 @@
 .sc-tick {
   width: 10px;
   height: 6px;
-  border-left: 2px solid var(--ink);
-  border-bottom: 2px solid var(--ink);
+  border-left: 2px solid var(--on-brass);
+  border-bottom: 2px solid var(--on-brass);
   transform: rotate(-45deg) translate(1px, -1px);
   opacity: 0;
 }
@@ -497,7 +497,7 @@
   align-items: baseline;
   gap: 8px;
   padding: 8px 12px;
-  border-top: 1px solid rgba(242, 239, 228, 0.1);
+  border-top: 1px solid rgba(var(--surface-rgb), 0.1);
 }
 
 .sc-foot-label {
@@ -522,7 +522,7 @@
 }
 
 .scorecard-total {
-  background: rgba(242, 239, 228, 0.04);
+  background: rgba(var(--surface-rgb), 0.04);
   font-weight: 700;
 }
 

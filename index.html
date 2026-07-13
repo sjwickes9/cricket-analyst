@@ -4,6 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>HOWZT</title>
+  <script>
+    // Apply a saved theme override before the first paint, so there is
+    // no flash of the wrong theme. If no preference is saved, nothing is
+    // set and the prefers-color-scheme media query decides.
+    (function () {
+      try {
+        var saved = localStorage.getItem('howzt-theme');
+        if (saved === 'light' || saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', saved);
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -61,7 +74,10 @@
     }, 4000);
   </script>
 
-  <div class="app-brand"><img src="logo.png" alt="HOWZT" class="app-brand-logo" /></div>
+  <div class="app-brand">
+    <img src="logo.png" alt="HOWZT" class="app-brand-logo" />
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch light or dark mode">Dark</button>
+  </div>
 
   <div id="setup-container" class="setup-container">
     <div id="setup-target"></div>
